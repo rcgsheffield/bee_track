@@ -7,13 +7,15 @@ function getdatestring() {
     var curr_hour = d.getHours();
     var curr_min = d.getMinutes();
     var curr_sec = d.getSeconds();
-    curr_month++ ; // In js, first month is 0, not 1
+    curr_month++; // In js, first month is 0, not 1
     st = curr_year + "-" + curr_month + "-" + curr_day + "T" + curr_hour + ":" + curr_min + ":" + curr_sec;
-    return st   
+    return st
 }
-    
+
 function msg(message) {
-    if (message.slice(-1) != '\n') {message=message + "\n";}
+    if (message.slice(-1) != '\n') {
+        message = message + "\n";
+    }
     $("#console").val($("#console").val() + message);// + "\n");
     var con = $('#console');
     con.scrollTop(con[0].scrollHeight - con.height());
@@ -22,171 +24,190 @@ function msg(message) {
 
 image = 0
 imagecount = 0
-$("input#url").val(window.location.hostname+":5000")
-url = "http://"+$('input#url').val()+"/setdatetime/"+getdatestring();
-    $.ajax({
-      url: url,
-      success: function(data, status, jqXHR){
+$("input#url").val(window.location.hostname + ":5000")
+url = "http://" + $('input#url').val() + "/setdatetime/" + getdatestring();
+$.ajax({
+    url: url,
+    success: function (data, status, jqXHR) {
         msg(data);
-      },
-      error: function(jqXHR, status, errorThrown){msg('Startup Error');},
-    });
-$('button#start').click(function(){
+    },
+    error: function (jqXHR, status, errorThrown) {
+        msg('Startup Error');
+    },
+});
+$('button#start').click(function () {
     msg('Starting...');
-    url = "http://"+$('input#url').val()+"/start";
+    url = "http://" + $('input#url').val() + "/start";
     $.ajax({
-      url: url,
-      success: function(data, status, jqXHR){
-        msg(data);
-      },
-      error: function(jqXHR, status, errorThrown){msg('Start Error');},
+        url: url,
+        success: function (data, status, jqXHR) {
+            msg(data);
+        },
+        error: function (jqXHR, status, errorThrown) {
+            msg('Start Error');
+        },
     });
 });
-$('button#stop').click(function(){
+$('button#stop').click(function () {
     msg('Stop...');
-    url = "http://"+$('input#url').val()+"/stop";
+    url = "http://" + $('input#url').val() + "/stop";
     $.ajax({
-      url: url,
-      success: function(data, status, jqXHR){
-        msg(data);
-      },
-      error: function(jqXHR, status, errorThrown){msg('Stop Error');},
+        url: url,
+        success: function (data, status, jqXHR) {
+            msg(data);
+        },
+        error: function (jqXHR, status, errorThrown) {
+            msg('Stop Error');
+        },
     });
 });
-$('button#imageup').click(function(){image=image+1;})
-$('button#imagedown').click(function(){image=image-1;})
-$('button#imageupx10').click(function(){image=image+10;})
-$('button#imagedownx10').click(function(){image=image-10;})
+$('button#imageup').click(function () {
+    image = image + 1;
+})
+$('button#imagedown').click(function () {
+    image = image - 1;
+})
+$('button#imageupx10').click(function () {
+    image = image + 10;
+})
+$('button#imagedownx10').click(function () {
+    image = image - 10;
+})
 
 
-setInterval(function(){ 
-    url = "http://"+$('input#url').val()+"/getdiskfree";
+setInterval(function () {
+    url = "http://" + $('input#url').val() + "/getdiskfree";
     $.ajax({
-      url: url,
-      success: function(data, status, jqXHR){
-        msg("Disk space: "+Math.round(parseInt(data)/1000000)+" Mb");
-      }});
+        url: url,
+        success: function (data, status, jqXHR) {
+            msg("Disk space: " + Math.round(parseInt(data) / 1000000) + " Mb");
+        }
+    });
 }, 60000);
 
-setInterval(function(){ 
-    url = "http://"+$('input#url').val()+"/getbattery";
+setInterval(function () {
+    url = "http://" + $('input#url').val() + "/getbattery";
     $.ajax({
-      url: url,
-      success: function(data, status, jqXHR){
-        //msg("!!");
-        //msg("Get Battery: "+data)
-        $('#battery').html(data)
-        if (data.substring(0,3)=='low') {$('#lowbattery').get(0).play();}
-      }});
+        url: url,
+        success: function (data, status, jqXHR) {
+            //msg("!!");
+            //msg("Get Battery: "+data)
+            $('#battery').html(data)
+            if (data.substring(0, 3) == 'low') {
+                $('#lowbattery').get(0).play();
+            }
+        }
+    });
 }, 3000);
 
 
-setInterval(function(){ 
+setInterval(function () {
 
-    url = "http://"+$('input#url').val()+"/getimagecount";
+    url = "http://" + $('input#url').val() + "/getimagecount";
     $.ajax({
-      url: url,
-      success: function(data, status, jqXHR){
+        url: url,
+        success: function (data, status, jqXHR) {
 
-        newtic = data
-        if (newtic!=imagecount)
-        {
+            newtic = data
+            if (newtic != imagecount) {
 
-            imagecount = newtic
-            msg("new image");
-            if($("#latestimage").is(':checked')) {
+                imagecount = newtic
+                msg("new image");
+                if ($("#latestimage").is(':checked')) {
 
-                image = imagecount-1
-                $('#download').click();
+                    image = imagecount - 1
+                    $('#download').click();
+                }
             }
         }
-      }
-      
-      
-      });
+
+
+    });
 }, 1000);
 
 
-
-
-
-
-setInterval(function(){ 
-    if($("#contactimage").is(':checked')) {
-        url = "http://"+$('input#url').val()+"/getcontact";
+setInterval(function () {
+    if ($("#contactimage").is(':checked')) {
+        url = "http://" + $('input#url').val() + "/getcontact";
         $.ajax({
-          url: url,
-          success: function(data, status, jqXHR){
-            console.log(data);
-            if (data!=null) {$('#beep').get(0).play();}
-            if ((data!=null) && ('track' in data) && (data['track']!=null) && (data['track'].length>0)) {
-                
-                confident = false;
-                for (var i=0;i<data['track'].length;i++){
-                    //confident = confident | data['track'][i]['confident']; //true if any of the patches is true
-                    console.log(data['track'][i]['prediction']);
-                    console.log($('input#detectthreshold').val());
-                    confident = confident | reachthreshold(data['track'][i]) //['prediction']<$('input#detectthreshold').val()); //true if any of the predictions=0 (which is detected)
+            url: url,
+            success: function (data, status, jqXHR) {
+                console.log(data);
+                if (data != null) {
+                    $('#beep').get(0).play();
                 }
-                if (confident) {$('#beep2s').get(0).play();}
-                image = data['index']-1
-                $('#download').click();
+                if ((data != null) && ('track' in data) && (data['track'] != null) && (data['track'].length > 0)) {
+
+                    confident = false;
+                    for (var i = 0; i < data['track'].length; i++) {
+                        //confident = confident | data['track'][i]['confident']; //true if any of the patches is true
+                        console.log(data['track'][i]['prediction']);
+                        console.log($('input#detectthreshold').val());
+                        confident = confident | reachthreshold(data['track'][i]) //['prediction']<$('input#detectthreshold').val()); //true if any of the predictions=0 (which is detected)
+                    }
+                    if (confident) {
+                        $('#beep2s').get(0).play();
+                    }
+                    image = data['index'] - 1
+                    $('#download').click();
+                }
             }
-          }
-          
-          
-          });
+        });
     }
 }, 500);
 
 
-
-
-setInterval(function(){ 
-    url = "http://"+$('input#url').val()+"/getmessage";
+setInterval(function () {
+    url = "http://" + $('input#url').val() + "/getmessage";
     $.ajax({
-      url: url,
-      success: function(data, status, jqXHR){
-        if (data.length>1) {
-          msg(data)
+        url: url,
+        success: function (data, status, jqXHR) {
+            if (data.length > 1) {
+                msg(data)
+            }
         }
-      }
-      
-      
-      });
+
+
+    });
 }, 1000);
 
-function drawpixel(imdata,x,y,width,height,r,g,b) {
-    pos = 4*(x+y*width)
+function drawpixel(imdata, x, y, width, height, r, g, b) {
+    pos = 4 * (x + y * width)
     imdata[pos] = r
-    imdata[pos+1] = g
-    imdata[pos+2] = b
+    imdata[pos + 1] = g
+    imdata[pos + 2] = b
 }
 
-function drawcircle(imdata,x,y,size,imscale,width,height,r,g,b) {
-    if (size<0) { size=0; }
+function drawcircle(imdata, x, y, size, imscale, width, height, r, g, b) {
+    if (size < 0) {
+        size = 0;
+    }
 
-    x=Math.round(x/imscale)
+    x = Math.round(x / imscale)
     //y=height-Math.round(y/imscale)
-    y=Math.round(y/imscale)
-    for (angle=0;angle<2*3.14159;angle+=0.1) {
-        drawpixel(imdata,Math.round(x+Math.cos(angle)*size),Math.round(y+Math.sin(angle)*size),width,height,r,g,b)
+    y = Math.round(y / imscale)
+    for (angle = 0; angle < 2 * 3.14159; angle += 0.1) {
+        drawpixel(imdata, Math.round(x + Math.cos(angle) * size), Math.round(y + Math.sin(angle) * size), width, height, r, g, b)
     }
 }
 
-function drawcrosshair(imdata,x,y,size,imscale,width,height,r,g,b) {
-    if (size<0) { size=0; }
+function drawcrosshair(imdata, x, y, size, imscale, width, height, r, g, b) {
+    if (size < 0) {
+        size = 0;
+    }
     size = size + 3; //corrects for removed pixels around centre of reticule, and a bit more
-    x=Math.round(x/imscale)
+    x = Math.round(x / imscale)
     //y=height-Math.round(y/imscale)
-    y=Math.round(y/imscale)
-    for (xstep=x-size;xstep<x+size;xstep+=1) {
-        if (Math.abs(xstep-x)>3) {
-            drawpixel(imdata,xstep,y,width,height,r,g,b) }
+    y = Math.round(y / imscale)
+    for (xstep = x - size; xstep < x + size; xstep += 1) {
+        if (Math.abs(xstep - x) > 3) {
+            drawpixel(imdata, xstep, y, width, height, r, g, b)
+        }
     }
-    for (ystep=y-size;ystep<y+size;ystep+=1) {
-        if (Math.abs(ystep-y)>3) {
-            drawpixel(imdata,x,ystep,width,height,r,g,b) }
+    for (ystep = y - size; ystep < y + size; ystep += 1) {
+        if (Math.abs(ystep - y) > 3) {
+            drawpixel(imdata, x, ystep, width, height, r, g, b)
+        }
     }
 
 }
@@ -196,260 +217,287 @@ function convertSimpleJSONtoImageURL(img) {
     height = img.length
     width = img[0].length
 
-    var canvas=document.createElement("canvas");
-    var ctx=canvas.getContext("2d");
+    var canvas = document.createElement("canvas");
+    var ctx = canvas.getContext("2d");
 
     // size the canvas to your desired image
-    canvas.width=width;
-    canvas.height=height;
+    canvas.width = width;
+    canvas.height = height;
 
     // get the imageData and pixel array from the canvas
-    var imgData=ctx.getImageData(0,0,width,height);
-    var imdata=imgData.data;
+    var imgData = ctx.getImageData(0, 0, width, height);
+    var imdata = imgData.data;
 
     // manipulate some pixel elements
     row = 0; //height-1;
     col = 0;
-    scale = 255/$('input#maxval').val()
+    scale = 255 / $('input#maxval').val()
 
-    for(var i=0;i<imdata.length;i+=4){
-        c = img[row][col]*scale;
-        if (c>255) {c=255;}
-        imdata[i]=c;
-        imdata[i+1] = c;
-        imdata[i+2] = c;
-        imdata[i+3]=255; // make this pixel opaque
+    for (var i = 0; i < imdata.length; i += 4) {
+        c = img[row][col] * scale;
+        if (c > 255) {
+            c = 255;
+        }
+        imdata[i] = c;
+        imdata[i + 1] = c;
+        imdata[i + 2] = c;
+        imdata[i + 3] = 255; // make this pixel opaque
         col = col + 1;
-        if (col>=width) {
-          col = 0;
-          row = row + 1;
+        if (col >= width) {
+            col = 0;
+            row = row + 1;
         }
     }
 
     // put the modified pixels back on the canvas
-    ctx.putImageData(imgData,0,0);
-    return "url('"+canvas.toDataURL()+"')";
+    ctx.putImageData(imgData, 0, 0);
+    return "url('" + canvas.toDataURL() + "')";
 }
 
 function reachthreshold(track) {
-  //does track reach threshold?
-  code = $('input[name="thresholdtype"]:checked').val();
-  if (code==0) {
-    if (track['prediction']<$('input#detectthreshold').val()) {
-      return true;
+    //does track reach threshold?
+    code = $('input[name="thresholdtype"]:checked').val();
+    if (code == 0) {
+        if (track['prediction'] < $('input#detectthreshold').val()) {
+            return true;
+        } else {
+            return false;
+        }
     }
-    else {return false;}
-  }
-  if (code==1) {
-    if (track['centre']>$('input#detectthreshold').val()) {
-      return true;
+    if (code == 1) {
+        if (track['centre'] > $('input#detectthreshold').val()) {
+            return true;
+        } else {
+            return false;
+        }
     }
-    else {return false;}
-  }
 
 }
+
 function convertJSONtoImageURL(data) {
     img = data['photo']
     record = data['record']
     height = img.length
     width = img[0].length
 
-    var canvas=document.createElement("canvas");
-    var ctx=canvas.getContext("2d");
+    var canvas = document.createElement("canvas");
+    var ctx = canvas.getContext("2d");
 
     // size the canvas to your desired image
-    canvas.width=width;
-    canvas.height=height;
+    canvas.width = width;
+    canvas.height = height;
 
     // get the imageData and pixel array from the canvas
-    var imgData=ctx.getImageData(0,0,width,height);
-    var imdata=imgData.data;
+    var imgData = ctx.getImageData(0, 0, width, height);
+    var imdata = imgData.data;
 
     // manipulate some pixel elements
     row = 0; //height-1;
     col = 0;
-    scale = 255/$('input#maxval').val()
+    scale = 255 / $('input#maxval').val()
 
-    for(var i=0;i<imdata.length;i+=4){
-        c = img[row][col]*scale;
-        if (c>255) {c=255;}
-        imdata[i]=c;
-        imdata[i+1] = c;
-        imdata[i+2] = c;
-        imdata[i+3]=255; // make this pixel opaque
+    for (var i = 0; i < imdata.length; i += 4) {
+        c = img[row][col] * scale;
+        if (c > 255) {
+            c = 255;
+        }
+        imdata[i] = c;
+        imdata[i + 1] = c;
+        imdata[i + 2] = c;
+        imdata[i + 3] = 255; // make this pixel opaque
         col = col + 1;
-        if (col>=width) {
-          col = 0;
-          row = row + 1;
+        if (col >= width) {
+            col = 0;
+            row = row + 1;
         }
     }
 
     blocksize = 5;
     if ('track' in data) {
-        if ((data['track']!=null) && (data['track'].length>0)) {
+        if ((data['track'] != null) && (data['track'].length > 0)) {
             console.log(data['track']);
-            for (var i=0;i<data['track'].length;i++){
-                msg([data['track'][i]['searchmax'],data['track'][i]['mean'],data['track'][i]['centremax'],data['track'][i]['prediction']])
-                drawcrosshair(imdata,data['track'][i]['x'],data['track'][i]['y'],Math.round(data['track'][i]['searchmax']/10),blocksize,width,height,0,0,255);
-                drawcrosshair(imdata,data['track'][i]['x'],data['track'][i]['y'],Math.round(-data['track'][i]['prediction']*10),blocksize,width,height,255,255,0);
+            for (var i = 0; i < data['track'].length; i++) {
+                msg([data['track'][i]['searchmax'], data['track'][i]['mean'], data['track'][i]['centremax'], data['track'][i]['prediction']])
+                drawcrosshair(imdata, data['track'][i]['x'], data['track'][i]['y'], Math.round(data['track'][i]['searchmax'] / 10), blocksize, width, height, 0, 0, 255);
+                drawcrosshair(imdata, data['track'][i]['x'], data['track'][i]['y'], Math.round(-data['track'][i]['prediction'] * 10), blocksize, width, height, 255, 255, 0);
                 console.log(data['track'][i]['prediction'])
-                drawcircle(imdata,data['track'][i]['x'],data['track'][i]['y'],5,blocksize,width,height,0,0,255);
+                drawcircle(imdata, data['track'][i]['x'], data['track'][i]['y'], 5, blocksize, width, height, 0, 0, 255);
                 if (reachthreshold(data['track'][i])) {
-                    drawcircle(imdata,data['track'][i]['x'],data['track'][i]['y'],15,blocksize,width,height,255,255,0);
+                    drawcircle(imdata, data['track'][i]['x'], data['track'][i]['y'], 15, blocksize, width, height, 255, 255, 0);
                 }
             }
-            
+
         }
     }
     // put the modified pixels back on the canvas
-    ctx.putImageData(imgData,0,0);
-    return "url('"+canvas.toDataURL()+"')";
+    ctx.putImageData(imgData, 0, 0);
+    return "url('" + canvas.toDataURL() + "')";
 }
 
 
-$('button.refreshimages').click(function(){refreshimages();});
+$('button.refreshimages').click(function () {
+    refreshimages();
+});
 
-$('input#label').bind('input',function() {
-url = "http://"+$('input#url').val()+"/setlabel/a"+$('input#label').val(); //have to add an extra character so an empty string can be sent!
-$.ajax({
-      url: url,
-      success: function(data, status, jqXHR){
-        msg('Set');
-      },
-      error: function(jqXHR, status, errorThrown){msg('Set Error');}
+$('input#label').bind('input', function () {
+    url = "http://" + $('input#url').val() + "/setlabel/a" + $('input#label').val(); //have to add an extra character so an empty string can be sent!
+    $.ajax({
+        url: url,
+        success: function (data, status, jqXHR) {
+            msg('Set');
+        },
+        error: function (jqXHR, status, errorThrown) {
+            msg('Set Error');
+        }
     });
 });
 
-$('input#maxval').bind('input',function() {refreshimages();});
-function refreshimages(){
+$('input#maxval').bind('input', function () {
+    refreshimages();
+});
+
+function refreshimages() {
     //$('audio#beep')[0].play();
-    $('span#index').text(image+1);//have to add one as python is zero indexed
+    $('span#index').text(image + 1);//have to add one as python is zero indexed
     $('span#imagecount').text(imagecount);
     msg('Downloading...');
-    
+
     camid = $('input#camid').val()
-    url = "http://"+$('input#url').val()+"/getimage/"+image+"/"+camid;
-    $.getJSON(url, function(data) {
-    idx = 0;
-    $('.tagimages').css("background-image","url('nodata.png')");
-    if ('track' in data) {
-        if ((data['track']!=null) && (data['track'].length>0)) {
-            console.log(data['track']);
-            $('#trackingresults').text("");
-            for (var i=0;i<data['track'].length;i++){                
-                if (reachthreshold(data['track'][i])) {
-                    console.log();
-                    $('#tagimage'+idx).css("background-image",convertSimpleJSONtoImageURL(data['track'][i]['patch']));
-                    $('#trackingresults').append("[focus:"+data['track'][i]['focus'][2].toFixed(2)+"(err="+data['track'][i]['focusfiterr'].toFixed(2)+")");
-                    rgb = data['track'][i]['rgb'];
-                    $('#trackingresults').append(", RGB:"+rgb[0].toFixed(0)+","+rgb[1].toFixed(0)+","+rgb[2].toFixed(0)+"]");
-                    idx = idx + 1;
+    url = "http://" + $('input#url').val() + "/getimage/" + image + "/" + camid;
+    $.getJSON(url, function (data) {
+        idx = 0;
+        $('.tagimages').css("background-image", "url('nodata.png')");
+        if ('track' in data) {
+            if ((data['track'] != null) && (data['track'].length > 0)) {
+                console.log(data['track']);
+                $('#trackingresults').text("");
+                for (var i = 0; i < data['track'].length; i++) {
+                    if (reachthreshold(data['track'][i])) {
+                        console.log();
+                        $('#tagimage' + idx).css("background-image", convertSimpleJSONtoImageURL(data['track'][i]['patch']));
+                        $('#trackingresults').append("[focus:" + data['track'][i]['focus'][2].toFixed(2) + "(err=" + data['track'][i]['focusfiterr'].toFixed(2) + ")");
+                        rgb = data['track'][i]['rgb'];
+                        $('#trackingresults').append(", RGB:" + rgb[0].toFixed(0) + "," + rgb[1].toFixed(0) + "," + rgb[2].toFixed(0) + "]");
+                        idx = idx + 1;
+                    }
                 }
             }
         }
-    }
-    $('#image').css("background-image",convertJSONtoImageURL(data)); 
-    }); 
-    
-    url = "http://"+$('input#url').val()+"/getimagecentre/"+image+"/"+camid;
-    $.getJSON(url, function(data) {$('#image_centre').css("background-image",convertJSONtoImageURL(data)); }); 
+        $('#image').css("background-image", convertJSONtoImageURL(data));
+    });
+
+    url = "http://" + $('input#url').val() + "/getimagecentre/" + image + "/" + camid;
+    $.getJSON(url, function (data) {
+        $('#image_centre').css("background-image", convertJSONtoImageURL(data));
+    });
 }
 
-$('input#realtimetracking').click(function(){
-  if (document.getElementById('realtimetracking').checked) {
-    code = "1";
-  }
-  else
-  {
-    code = "0";
-  }
-  url = "http://"+$('input#url').val()+"/set/tracking/track/"+code;
-  $.ajax({
-      url: url,
-      success: function(data, status, jqXHR){
-        msg('Set');
-      },
-      error: function(jqXHR, status, errorThrown){msg('Set Error');}
-  });
-});
-
-$('input#flashseq').click(function(){
-
-  code = $('input[name="flashseq"]:checked').val();
-  url = "http://"+$('input#url').val()+"/set/trigger/flashseq/"+code;
-  $.ajax({
-      url: url,
-      success: function(data, status, jqXHR){
-        msg('Set');
-      },
-      error: function(jqXHR, status, errorThrown){msg('Set Error');}
-  });
-});
-
-
-$('button#setinterval').click(function(){
-    msg('Setting...');
-    url = "http://"+$('input#url').val()+"/set/trigger/t/"+$('input#interval').val();
+$('input#realtimetracking').click(function () {
+    if (document.getElementById('realtimetracking').checked) {
+        code = "1";
+    } else {
+        code = "0";
+    }
+    url = "http://" + $('input#url').val() + "/set/tracking/track/" + code;
     $.ajax({
-      url: url,
-      success: function(data, status, jqXHR){
-        msg('Set');
-      },
-      error: function(jqXHR, status, errorThrown){msg('Set Error');}
-    });
-});
-$('button#setdelaystart').click(function(){
-    msg('Setting...');
-    url = "http://"+$('input#url').val()+"/set/trigger/ds/"+$('input#delaystart').val();
-    $.ajax({
-      url: url,
-      success: function(data, status, jqXHR){
-        msg('Set');
-      },
-      error: function(jqXHR, status, errorThrown){msg('Set Error');}
+        url: url,
+        success: function (data, status, jqXHR) {
+            msg('Set');
+        },
+        error: function (jqXHR, status, errorThrown) {
+            msg('Set Error');
+        }
     });
 });
 
-$('button#reboot').click(function(){
+$('input#flashseq').click(function () {
+
+    code = $('input[name="flashseq"]:checked').val();
+    url = "http://" + $('input#url').val() + "/set/trigger/flashseq/" + code;
+    $.ajax({
+        url: url,
+        success: function (data, status, jqXHR) {
+            msg('Set');
+        },
+        error: function (jqXHR, status, errorThrown) {
+            msg('Set Error');
+        }
+    });
+});
+
+
+$('button#setinterval').click(function () {
+    msg('Setting...');
+    url = "http://" + $('input#url').val() + "/set/trigger/t/" + $('input#interval').val();
+    $.ajax({
+        url: url,
+        success: function (data, status, jqXHR) {
+            msg('Set');
+        },
+        error: function (jqXHR, status, errorThrown) {
+            msg('Set Error');
+        }
+    });
+});
+$('button#setdelaystart').click(function () {
+    msg('Setting...');
+    url = "http://" + $('input#url').val() + "/set/trigger/ds/" + $('input#delaystart').val();
+    $.ajax({
+        url: url,
+        success: function (data, status, jqXHR) {
+            msg('Set');
+        },
+        error: function (jqXHR, status, errorThrown) {
+            msg('Set Error');
+        }
+    });
+});
+
+$('button#reboot').click(function () {
     msg('Rebooting...');
-    url = "http://"+$('input#url').val()+"/reboot";
+    url = "http://" + $('input#url').val() + "/reboot";
     alert(url)
     $.ajax({
-      url: url,
-      success: function(data, status, jqXHR){
-        msg('Reboot in progress...');
-      },
-      error: function(jqXHR, status, errorThrown){msg('Reboot Error');}
+        url: url,
+        success: function (data, status, jqXHR) {
+            msg('Reboot in progress...');
+        },
+        error: function (jqXHR, status, errorThrown) {
+            msg('Reboot Error');
+        }
     });
 });
 
-$('button#update').click(function(){
+$('button#update').click(function () {
     msg('Updating...');
-    url = "http://"+$('input#url').val()+"/update";
+    url = "http://" + $('input#url').val() + "/update";
     $.ajax({
-      url: url,
-      success: function(data, status, jqXHR){
-        msg('Update Complete. Reboot Required: '+data);
-      },
-      error: function(jqXHR, status, errorThroewn){msg('Update Error');}
+        url: url,
+        success: function (data, status, jqXHR) {
+            msg('Update Complete. Reboot Required: ' + data);
+        },
+        error: function (jqXHR, status, errorThroewn) {
+            msg('Update Error');
+        }
     });
 });
 
-function sendinstruction(instruction){
+function sendinstruction(instruction) {
     msg(instruction);
-    url = "http://"+$('input#url').val()+instruction;
+    url = "http://" + $('input#url').val() + instruction;
     $.ajax({
-      url: url,
-      success: function(data, status, jqXHR){
-        msg(data);
-      },
-      error: function(jqXHR, status, errorThrown){msg('Instruction Error');}
+        url: url,
+        success: function (data, status, jqXHR) {
+            msg(data);
+        },
+        error: function (jqXHR, status, errorThrown) {
+            msg('Instruction Error');
+        }
     });
 }
 
-$('input#console_input').keyup(function(e){
-    if(e.keyCode == 13)
-    {
+$('input#console_input').keyup(function (e) {
+    if (e.keyCode == 13) {
         sendinstruction($('input#console_input').val());
     }
 });

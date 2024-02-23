@@ -2,69 +2,81 @@
 <meta charset="utf-8">
 <link rel="stylesheet" type="text/css" href="style.css">
 <head>
- <script src="jquery-3.3.1.min.js"></script>
+    <script src="jquery-3.3.1.min.js"></script>
 </head>
 <body>
-<audio id="beep" src="beep.mp3" type="audio/mpeg"></audio>    
-<audio id="beep2s" src="beep2s.mp3" type="audio/mpeg"></audio>    
-<audio id="lowbattery" src="lowbattery.mp3" type="audio/mpeg"></audio>    
+
+<!-- Sound files -->
+<audio id="beep" src="beep.mp3" type="audio/mpeg"></audio>
+<audio id="beep2s" src="beep2s.mp3" type="audio/mpeg"></audio>
+<audio id="lowbattery" src="lowbattery.mp3" type="audio/mpeg"></audio>
+
 <h3>Bumblebee Tracking System v2.0</h3>
 Battery: <span id="battery"></span>
 <div id="config">
-label for file: <input id="label" value="" /><br/>
-url to API: <input id="url" value="10.3.141.1:5000" /><br/>
-<br/>
-Capture:
-<button id="start">Start</button>
-<button id="stop">Stop</button><br/>
-<br/>
-Delay Start <input id="delaystart" value=0 size=2/> (proportion of interval)
-<button id="setdelaystart">set</button><br/>
-Interval <input id="interval" value=3 size=2/> seconds
-<button id="setinterval">set</button><br/>
-Flash seq:
-<input type='radio' name='flashseq' id='flashseq' value='0' checked>all
-<input type='radio' name='flashseq' id='flashseq' value='1'>2
-<input type='radio' name='flashseq' id='flashseq' value='2'>1
-<input type='radio' name='flashseq' id='flashseq' value='9'>none
-<br />
+    label for file: <input id="label" value=""/><br/>
+    url to API: <input id="url" value="10.3.141.1:5000"/><br/>
+    <br/>
+    Capture:
+    <button id="start">Start</button>
+    <button id="stop">Stop</button>
+    <br/>
+    <br/>
+    Delay Start <input id="delaystart" value=0 size=2/> (proportion of interval)
+    <button id="setdelaystart">set</button>
+    <br/>
+    Interval <input id="interval" value=3 size=2/> seconds
+    <button id="setinterval">set</button>
+    <br/>
+    Flash seq:
+    <input type='radio' name='flashseq' id='flashseq' value='0' checked>all
+    <input type='radio' name='flashseq' id='flashseq' value='1'>2
+    <input type='radio' name='flashseq' id='flashseq' value='2'>1
+    <input type='radio' name='flashseq' id='flashseq' value='9'>none
+    <br/>
 
-<input type='checkbox' id='realtimetracking' value='realtimetracking'>real time tracking<br/>
+    <input type='checkbox' id='realtimetracking' value='realtimetracking'>real time tracking<br/>
 
-<button id="download" class="refreshimages">Download</button>
-<button id="imagedown" class="refreshimages">&lt;</button>
-<button id="imageup" class="refreshimages">&gt;</button>
-<button id="imagedownx10" class="refreshimages">&lt;&lt;</button>
-<button id="imageupx10" class="refreshimages">&gt;&gt;</button>
-<br />
-<input type="checkbox" id="latestimage">Update to latest image</input><br/>
-<input type="checkbox" id="contactimage">Update for contact</input><br/>
-Detection threshold: <input id="detectthreshold" size=8 value=0.8 />
-<br />
-<input type='radio' name='thresholdtype' id='thresholdtype' value='0' checked>default
-<input type='radio' name='thresholdtype' id='thresholdtype' value='1' checked>centresum
-<br/>
-<br />Image <span id="index">0</span> of <span id="imagecount">?</span><br />
-Image threshold: <input id="maxval" size=3 value=10 />
-<br/>
-<textarea rows="10" cols="30" id="console">
+    <button id="download" class="refreshimages">Download</button>
+    <button id="imagedown" class="refreshimages">&lt;</button>
+    <button id="imageup" class="refreshimages">&gt;</button>
+    <button id="imagedownx10" class="refreshimages">&lt;&lt;</button>
+    <button id="imageupx10" class="refreshimages">&gt;&gt;</button>
+    <br/>
+    <input type="checkbox" id="latestimage">Update to latest image</input><br/>
+    <input type="checkbox" id="contactimage">Update for contact</input><br/>
+    Detection threshold: <input id="detectthreshold" size=8 value=0.8/>
+    <br/>
+    <input type='radio' name='thresholdtype' id='thresholdtype' value='0' checked>default
+    <input type='radio' name='thresholdtype' id='thresholdtype' value='1' checked>centresum
+    <br/>
+    <br/>Image <span id="index">0</span> of <span id="imagecount">?</span><br/>
+    Image threshold: <input id="maxval" size=3 value=10/>
+    <br/>
+    <textarea rows="10" cols="30" id="console">
 </textarea>
-<br/>
-<input type="text" id="console_input"></text>
-<p><pre>
+    <br/>
+    <input type="text" id="console_input"></text>
+    <p>
+    <pre>
 examples:
 /set/trigger/t/6
 /set/trigger/skipnoflashes/5
 /config/exposure/10
 /config/delay/100
 /config/predelay/100
-</pre></p>
-<br/>
-<br/>
-<b>System</b><br/>
-(to change the camera id we are viewing): <input id="camid" value="0" size=3 /><br/>
-Update: <button id="update">update</button><br/>
-Reboot: <button id="reboot">reboot</button><br/><br />
+</pre>
+    </p>
+    <br/>
+    <br/>
+    <b>System</b><br/>
+    (to change the camera id we are viewing): <input id="camid" value="0" size=3/><br/>
+    Update:
+    <button id="update">update</button>
+    <br/>
+    Reboot:
+    <button id="reboot">reboot</button>
+    <br/><br/>
 
 </div>
 <div id="image">
@@ -79,6 +91,6 @@ Reboot: <button id="reboot">reboot</button><br/><br />
 <span id="trackingresults">[no tracking results]</span>
 <div>
 </div>
- <script src="track.js"></script>
+<script src="track.js"></script>
 </body>
 
