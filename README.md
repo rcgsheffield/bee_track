@@ -25,11 +25,11 @@ Edit `/etc/wpa_supplicant/wpa_supplicant.conf`, enter:
 
 # Installation
 
-Download the aravis library:
+Download the Aravis library:
 
     git clone https://github.com/AravisProject/aravis.git
 
-Or donwload earlier version from
+Or download earlier version from
 http://ftp.gnome.org/pub/GNOME/sources/aravis/0.6/
 
 then if you need the viewer (although I did find I had to split these installs).
@@ -91,21 +91,102 @@ flowchart LR
 user(("Web\nbrowser"))
 backend[API\nFlask app\nbee_track/core.py]
 frontend[Javascript GUI\nhttp.server\nwebinterface/]
+cameras
 user <--"HTTP 80" --> frontend
 frontend <--"HTTP 5000"--> backend
+backend --"Aravis? GPIO?"--> cameras
 ```
+
+## Frontend app
+
+For more information about the user interface, see [webinterface/README.md](./webinterface/README.md).
+
+## Backend app
+
+The `main`() function runs `startup()` which initialises the system and runs the Flask application. This sets up multiple parallel processes that control different parts of the system which are stored in the global scope of the application.
+
+`message_queue` is a first-in-first-out `multiprocessing.Queue` that's used for passing messages from the file manager and triggers.
+
+### Workers
+
+What is `Configurable`? `Configurable.worker()` is the function that runs in a separate process. Each worker (`Configurable`) has a `config_worker()` method that runs in a separate thread and listened for updated options which are used to change the attributes of that instance.
+
+Parallel processes:
+
+* Trigger
+* Each camera
+* Tracking
+* Rotate
+
+### Cameras
+
+`Cameras` implement ?
+
+What is tracking?
+
+What is rotate?
+
+```mermaid
+---
+title: Bee tracker class diagram
+---
+classDiagram
+class Configurable {
+    Queue config_queue
+    Queue message_queue
+    config_worker()
+    worker()
+}
+class Camera {
+    object record
+    object cam_trigger
+    object cam_id
+    setup_camera()
+    camera_config_worker()
+    camera_trigger()
+    get_photo(getraw)
+    close()
+}
+class Trigger {
+    Event cam_trigger
+    float t
+    trigger_camera(fireflash, endofset)
+}
+class Rotate {
+	float targetangle
+}
+
+Aravis_Camera --|> Camera
+Camera --|> Configurable
+FlashRelay --|> Configurable
+Rotate --|> Configurable
+Tracking --|> Configurable
+Trigger --|> Configurable
+```
+
+
 
 # Virtual environment
 
-These are instructions for running the API app on a virtual Raspberry Pi machine using [dockerpi](https://github.com/lukechilds/dockerpi).
+These are instructions for running the API app on a virtual Raspberry Pi machine using [dockerpi](https://github.com/lukechilds/dockerpi). This is necessary to load the libraries that only work on Pi such as `RPi.GPIO`.
 
-1. Install Docker
+1. Install [Docker Engine](https://docs.docker.com/engine/).
 2. Download the latest stable [Raspberry Pi OS Lite image](https://www.raspberrypi.com/software/operating-systems/)
 3. Decompress the image `unxz *.xz`
-4. Run a virtual machine (`p3` means Rasp. Pi version 3, which is under experimental support)
+4. Specify [the options](https://github.com/lukechilds/dockerpi?tab=readme-ov-file#which-machines-are-supported) for the emulator
+5. Run a virtual machine (`pi3` means Rasp. Pi version 3, which is under experimental support) using the [docker run](https://docs.docker.com/reference/cli/docker/container/run/) command.
 
 ```bash
 image_path="./2023-12-11-raspios-bookworm-arm64-lite.img"
-docker run -it -v $image_path:/sdcard/filesystem.img lukechilds/dockerpi:vm p3
+pi_version="pi3"
+docker run -it -v $image_path:/sdcard/filesystem.img lukechilds/dockerpi:vm $pi_version
+```
+
+We're using the `dockerpi:vm` container, which doesn't include the Pi OS image, because we want to use the latest one that we downloaded ourselves. We have to run the container in interactive mode (the `-it` option) because it's an ARM [emulator using QEMU](https://www.qemu.org/docs/master/system/target-arm.html), not a proper container base image.
+
+An example command might be:
+
+```bash
+docker run -it -v .\2023-10-10-raspios-bookworm-armhf-lite.img:/sdcard/filesystem.img lukechilds/dockerpi:vm pi3
 ```
 
