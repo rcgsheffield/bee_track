@@ -1,18 +1,29 @@
-from multiprocessing import Queue, Value, sharedctypes
-from threading import Thread
+import multiprocessing.sharedctypes
 
 
 class Configurable:
-    def __init__(self, message_queue):
-        self.config_queue = Queue()
+    """
+    A configurable worker that runs in a separate process.
+
+    # TODO rename Worker
+    """
+
+    def __init__(self, message_queue: Queue):
+        self.config_queue = multiprocessing.Queue()
+        self.config_thread = threading.Thread(target=self.config_worker).start()
         self.message_queue = message_queue
-        t = Thread(target=self.config_worker)
-        t.start()
+
+    def worker(self):
+        # Implement the worker code
+        # TODO rename Worker.__call__() or Worker.run()
+        raise NotImplementedError
 
     def config_worker(self):
         """
         this method is a worker that waits for the config queue
         """
+        # TODO what is happening here?
+        # TODO refactor into separate set, get, put commands
         while True:
             command = self.config_queue.get()
 
@@ -33,7 +44,7 @@ class Configurable:
                 continue
 
             att = getattr(self, command[1])
-            if isinstance(att, sharedctypes.Synchronized):
+            if isinstance(att, multiprocessing.sharedctypes.Synchronized):
                 v = att.value
             else:
                 v = att

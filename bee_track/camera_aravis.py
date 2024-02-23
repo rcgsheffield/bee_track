@@ -1,3 +1,4 @@
+import logging
 import sys
 import time
 import pickle
@@ -9,32 +10,56 @@ from datetime import datetime as dt
 from multiprocessing import Queue
 
 import numpy as np
-# ???
+# TODO what's this gi.repository?
 from gi.repository import Aravis
 
 from bee_track.camera import Camera
 
+logger = logging.getLogger(__name__)
 
-def getcameraids() -> list[str]:
+
+class AravisCamera(Camera):
     """
-    Get camera identifiers
+    TODO
     """
-    # TODO convert to class method
-    # Detect devices
-    Aravis.update_device_list()
-    # https://lazka.github.io/pgi-docs/Aravis-0.8/functions.html#Aravis.get_n_devices
-    n_cams: int = Aravis.get_n_devices()
-    print("%d cameras found" % n_cams)
-    ids = list()
-    for i in range(n_cams):
-        # https://lazka.github.io/pgi-docs/Aravis-0.8/functions.html#Aravis.get_device_id
-        dev_id: str = Aravis.get_device_id(i)
-        print("Found: %s" % dev_id)
-        ids.append(dev_id)
-    return ids
 
+    @classmethod
+    def update_device_list(cls):
+        """
+        Detect devices
+        """
+        # Updates the list of currently online devices.
+        # https://lazka.github.io/pgi-docs/Aravis-0.8/functions.html#Aravis.update_device_list
+        Aravis.update_device_list()
 
-class Aravis_Camera(Camera):
+    @classmethod
+    def count_devices(cls) -> int:
+        """
+        Retrieves the number of currently online devices.
+        """
+        cls.update_device_list()
+        # https://lazka.github.io/pgi-docs/Aravis-0.8/functions.html#Aravis.get_n_devices
+        n_cams = Aravis.get_n_devices()
+
+        logger.info("%d cameras found" % n_cams)
+
+        return n_cams
+
+    @staticmethod
+    def get_camera_ids() -> list[str]:
+        """
+        Get camera identifiers
+        """
+        # TODO convert to generator? (how long does get_device_id take to run?)
+
+        ids = list()
+        for i in range(n_cams):
+            # https://lazka.github.io/pgi-docs/Aravis-0.8/functions.html#Aravis.get_device_id
+            dev_id: str = Aravis.get_device_id(i)
+            logger.info("Found camera: %s" % dev_id)
+            ids.append(dev_id)
+        return ids
+
     def setup_camera(self):
         print("PROCESS ID: ", os.getpid())
         os.system("sudo chrt -f -p 1 %d" % os.getpid())

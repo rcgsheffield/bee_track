@@ -1,16 +1,24 @@
+import logging
 import time
 import datetime
-import RPi.GPIO as GPIO
-from configurable import Configurable
 import multiprocessing
+
+import RPi.GPIO as GPIO
+
+from configurable import Configurable
+
+logger = logging.getLogger(__name__)
 
 
 class Trigger(Configurable):
+    """
+    Send a signal to the camera to take an exposure.
+    """
+
     def __init__(self, message_queue, cam_trigger, t=2.0):
         super().__init__(message_queue)
         print("Initialising Trigger Control")
         self.cam_trigger = cam_trigger
-        self.debug = False
         self.manager = multiprocessing.Manager()
         self.flashselection = self.manager.list()
         self.index = multiprocessing.Value('i', 0)
@@ -40,14 +48,14 @@ class Trigger(Configurable):
         print("Running")
         self.run = multiprocessing.Event()
 
-    def trigger_camera(self, fireflash, endofset):
+    def trigger_camera(self, fireflash: bool, endofset: bool):
         """
         Send trigger to camera (and flash)
+
         fireflash = boolean: true=fire flash
         endofset = boolean: whether this is the last photo of a set (this will then tell the tracking system to look for the bee).
         """
-        if self.debug:
-            print("Photo:    Flash" if fireflash else "Photo: No Flash")
+        logger.debug("Photo:    Flash" if fireflash else "Photo: No Flash")
 
         if fireflash:
             if self.flashseq.value == 0:
@@ -97,10 +105,10 @@ class Trigger(Configurable):
 
     def worker(self):
         skipcount = 0
-        while (True):
+        while True:
             self.run.wait()
             delaystart = self.ds.value * self.t.value
-            time.sleep(delaystart);
+            time.sleep(delaystart)
             skipcount += 1
             skipnoflashphoto = (skipcount <= self.skipnoflashes.value)
             self.trigger_camera(True, skipnoflashphoto)

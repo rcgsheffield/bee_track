@@ -28,7 +28,7 @@ import bee_track.camera_aravis
 from bee_track.battery import read_batteries
 from bee_track.trigger import Trigger
 from bee_track.rotate import Rotate
-from bee_track.camera_aravis import Camera, Aravis_Camera
+from bee_track.camera_aravis import Camera, AravisCamera
 from bee_track.tracking import Tracking
 from bee_track.file_manager import FileManager
 
@@ -45,9 +45,16 @@ log.setLevel(logging.ERROR)
 message_queue: Optional[multiprocessing.Queue] = None
 "FIFO message queue for the whole app"
 cameras: list[Camera] = list()
-trigger = None
-rotate = None
-tracking = None
+"Cameras registered at launch, each with a process"
+trigger: Optional[Trigger] = None
+"Camera exposure worker"
+rotate: Optional[Rotate] = None
+"Rotate motor worker"
+tracking: Optional[Tracking] = None
+cam_trigger: Optional[multiprocessing.Event] = None
+"An event ?"
+file_manager: Optional[FileManager] = None
+"Photo file archiving tool"
 
 
 @app.route('/')
@@ -80,7 +87,7 @@ def addtoconfigvals(component, field, value):
 @app.route('/set/<string:component>/<string:field>/<string:value>')
 def set(component: str, field: str, value: str):
     """
-    ???
+    Set an option on all instances of a certain type (component).
     """
     # TODO: Secure?
     print(component, field, value)
@@ -166,17 +173,21 @@ def getmessage():
 
 
 def get_ip():
+    """
+    ???
+    """
     # From https://stackoverflow.com/a/28950776
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    ip = '127.0.0.1'
     try:
         # doesn't even have to be reachable
-        s.connect(('10.255.255.255', 1))
-        IP = s.getsockname()[0]
-    except Exception:
-        IP = '127.0.0.1'
+        sock.connect(('10.255.255.255', 1))
+        ip = sock.getsockname()[0]
+    except:
+        pass
     finally:
-        s.close()
-    return IP
+        sock.close()
+    return ip
 
 
 def share_ip():
@@ -204,10 +215,11 @@ def share_ip():
         pass
 
 
-@app.route('/setid/<int:id>')
-def setid(id):
-    print("Updating device ID: %s" % str(id))
-    open('device_id.txt', 'w').write(str(id))
+@app.route('/setid/<int:device_id>')
+def setid(device_id: int):
+    print("Updating device ID: %s" % str(device_id))
+    with open('device_id.txt', 'w') as file:
+        file.write(str(device_id))
     print("Updated")
     return "Done"
 
@@ -235,19 +247,18 @@ def startup():
     cam_trigger = multiprocessing.Event()
 
     trigger = Trigger(message_queue, cam_trigger)
-    t = multiprocessing.Process(target=trigger.worker)
-    t.start()
+    multiprocessing.Process(target=trigger.worker).start()
 
     # Initialise cameras: get list of Aravis cameras
-    cam_ids = bee_track.camera_aravis.getcameraids()
+    cam_ids = AravisCamera.get_camera_ids()
     if not cam_ids:
         raise bee_track.camera.NoCamerasFoundError
     # Iterate over available cameras ands tart a process for each one
     for cam_id in cam_ids:
-        camera = Aravis_Camera(message_queue, trigger.record, cam_trigger, cam_id=cam_id)
+        app.logger.info("Camera %s", cam_id)
+        camera = AravisCamera(message_queue, trigger.record, cam_trigger, cam_id=cam_id)
         cameras.append(camera)
-        t = multiprocessing.Process(target=camera.worker)
-        t.start()
+        multiprocessing.Process(target=camera.worker).start()
         time.sleep(1)
     # we'll make the tracking camera the first greyscale one if there is one, otherwise the 0th one.
     usecam = cameras[0]
@@ -262,13 +273,11 @@ def startup():
 
     # ?
     tracking = Tracking(message_queue, cam.photo_queue)
-    t = multiprocessing.Process(target=tracking.worker)
-    t.start()
+    multiprocessing.Process(target=tracking.worker).start()
 
     # ?
     rotate = Rotate(message_queue)
-    t = multiprocessing.Process(target=rotate.worker)
-    t.start()
+    multiprocessing.Process(target=rotate.worker).start()
 
     share_ip()
     setfromconfigvals()
@@ -277,7 +286,10 @@ def startup():
 
 @app.route('/start')
 def start():
-    # global trigger
+    """
+    Start camera data capture.
+    """
+    # TODO what is the index?
     nextindex = max([camera.index.value for camera in cameras] + [trigger.index.value])
 
     # reset indicies
@@ -295,7 +307,9 @@ def start():
 
 @app.route('/stop')
 def stop():
-    # global trigger
+    """
+    Stop camera data capture
+    """
     trigger.run.clear()
     return "Collection Stopped"
 
@@ -307,8 +321,13 @@ def compress():
 
 
 @app.route('/rotatetoangle/<float:targetangle>')
-def rotatetoangle(targetangle):
+def rotatetoangle(targetangle: float):
+    """
+    TODO what's this?
+    """
+    # Save shared data
     rotate.targetangle.value = targetangle
+    # Signal the event
     rotate.rotation.set()
     return "Rotation Started"
 

@@ -1,12 +1,13 @@
-import threading
+import datetime
 import multiprocessing
 import pickle
-import datetime
-from QueueBuffer import QueueBuffer
-from configurable import Configurable
-from multiprocessing import Value, Queue
+import threading
 
+# TODO what's this?
+from QueueBuffer import QueueBuffer
 import numpy as np
+
+from configurable import Configurable
 
 
 class CameraException(Exception):
@@ -53,15 +54,15 @@ class Camera(Configurable):
         self.photo_queue = QueueBuffer(10)
         self.record = record
         self.label = multiprocessing.Array('c', 100)
-        self.index = Value('i', 0)
-        self.savephotos = Value('b', True)
-        self.fastqueue = Value('b', False)  ###THIS WILL STOP PROCESSING
-        self.test = Value('b', False)
+        self.index = multiprocessing.Value('i', 0)
+        self.savephotos = multiprocessing.Value('b', True)
+        self.fastqueue = multiprocessing.Value('b', False)  ###THIS WILL STOP PROCESSING
+        self.test = multiprocessing.Value('b', False)
         self.cam_trigger = cam_trigger
-        self.colour_camera = Value('b', False)
-        self.return_full_colour = Value('b', False)  # if it returns RGB or just raw data.
+        self.colour_camera = multiprocessing.Value('b', False)
+        self.return_full_colour = multiprocessing.Value('b', False)  # if it returns RGB or just raw data.
         self.cam_id = cam_id
-        self.config_camera_queue = Queue()
+        self.config_camera_queue = multiprocessing.Queue()
         self.info = False
         self.debug = False
 

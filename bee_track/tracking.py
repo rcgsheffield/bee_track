@@ -1,11 +1,12 @@
-import numpy as np
-from bee_track.configurable import Configurable
-import retrodetect
 from multiprocessing import Process, Queue, Value
 import pickle
 import os
 import time
 import datetime
+
+from bee_track.configurable import Configurable
+import numpy as np
+import retrodetect
 
 
 def recordtime(photoitem, msg):
@@ -26,7 +27,7 @@ def prettyprinttimes(timemsgs):
 import numpy.polynomial.polynomial as poly
 
 
-class TagAnalysis():
+class TagAnalysis:
     def __init__(self, track):
         """
         Pass the photo and the 'track' dictonary (containing an 'x' and 'y' element in the dictionary).
@@ -91,6 +92,10 @@ class TagAnalysisFromImage(TagAnalysis):
 
 
 class Tracking(Configurable):
+    """
+    TODO
+    """
+
     def __init__(self, message_queue, photo_queue):
         super().__init__(message_queue)
         self.photo_queue = photo_queue
