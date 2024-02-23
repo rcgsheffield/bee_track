@@ -1,32 +1,36 @@
 """
 Bee tracker web API
+
+This is an API to control and capture data from multiple cameras.
 """
-from multiprocessing import Process, Queue
+
 import os
-from datetime import datetime as dt
 import subprocess
-from queue import Empty
-from psutil import disk_usage
 import multiprocessing
 import pickle
 import logging
 import time
+import socket
+import queue
 from glob import glob
+from datetime import datetime as dt
+from typing import Optional
 
+import psutil
 import flask
 import flask_cors
 import flask_compress
 from flask import jsonify
-
 import numpy as np
 
+import bee_track.camera
+import bee_track.camera_aravis
 from bee_track.battery import read_batteries
 from bee_track.trigger import Trigger
 from bee_track.rotate import Rotate
-from bee_track.camera_aravis import Aravis_Camera as Camera
-from bee_track.camera_aravis import getcameraids
+from bee_track.camera_aravis import Camera, Aravis_Camera
 from bee_track.tracking import Tracking
-from bee_track.file_manager import File_Manager
+from bee_track.file_manager import FileManager
 
 # Build Flask app
 app = flask.Flask(__name__)
@@ -38,8 +42,9 @@ log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
 # Global variables
-message_queue = None
-cameras = list()  # None
+message_queue: Optional[multiprocessing.Queue] = None
+"FIFO message queue for the whole app"
+cameras: list[Camera] = list()
 trigger = None
 rotate = None
 tracking = None
@@ -73,9 +78,12 @@ def addtoconfigvals(component, field, value):
 
 
 @app.route('/set/<string:component>/<string:field>/<string:value>')
-def set(component, field, value):
+def set(component: str, field: str, value: str):
+    """
+    ???
+    """
+    # TODO: Secure?
     print(component, field, value)
-    """TO DO: Secure?"""
     addtoconfigvals(component, field, value)
 
     comp = None
@@ -91,6 +99,9 @@ def set(component, field, value):
 
 
 def setfromconfigvals():
+    """
+    ???
+    """
     try:
         configvals = pickle.load(open('configvals.pkl', 'rb'))
         for component, fields in configvals.items():
@@ -102,8 +113,13 @@ def setfromconfigvals():
 
 @app.route('/get/<string:component>/<string:field>')
 def get(component, field):
+    """
+    ???
+    """
+    # TODO Secure?
+
     print(component, field)
-    """TO DO: Secure?"""
+
     comp = None
     if component == 'camera': comp = cameras[0]
     if component == 'trigger': comp = trigger
@@ -116,12 +132,13 @@ def get(component, field):
 
 @app.route('/getdiskfree')
 def getdiskfree():
-    return str(disk_usage('/').free)
+    return str(psutil.disk_usage('/').free)
 
 
 @app.route('/getbattery')
 def getbattery():
     batstr = read_batteries()
+    # Log battery info to file
     with open("battery_status.txt", "a") as battery:
         battery.write(batstr)
     return batstr
@@ -136,18 +153,16 @@ def configcam(instruction, value):
 
 @app.route('/getmessage')
 def getmessage():
-    msgs = ""
+    """
+    Retrieve the message queue and return the messages as a string.
+    """
+    msgs = str()
     try:
-
-        while (True):
+        while True:
             msg = message_queue.get_nowait()
-            msgs = msgs + str(msg) + "\n"
-        # return msgs
-    except Empty:
+            msgs += f"{msg}\n"
+    except queue.Empty:
         return msgs
-
-
-import socket
 
 
 def get_ip():
@@ -199,36 +214,41 @@ def setid(id):
 
 @app.route('/startup')
 def startup():
+    """
+    Initialise the web server
+    """
+
     global message_queue
     global trigger
     global rotate
     global cameras
     global tracking
     global cam_trigger
-    global rotate
     global file_manager
 
     if trigger is not None:
         return "startup already complete"
-    message_queue = Queue()
+    message_queue = multiprocessing.Queue()
 
-    file_manager = File_Manager(message_queue)
+    file_manager = FileManager(message_queue)
 
     cam_trigger = multiprocessing.Event()
 
     trigger = Trigger(message_queue, cam_trigger)
-    t = Process(target=trigger.worker)
+    t = multiprocessing.Process(target=trigger.worker)
     t.start()
 
-    cam_ids = getcameraids()
-
+    # Initialise cameras: get list of Aravis cameras
+    cam_ids = bee_track.camera_aravis.getcameraids()
+    if not cam_ids:
+        raise bee_track.camera.NoCamerasFoundError
+    # Iterate over available cameras ands tart a process for each one
     for cam_id in cam_ids:
-        camera = Camera(message_queue, trigger.record, cam_trigger, cam_id=cam_id)
+        camera = Aravis_Camera(message_queue, trigger.record, cam_trigger, cam_id=cam_id)
         cameras.append(camera)
-        t = Process(target=camera.worker)
+        t = multiprocessing.Process(target=camera.worker)
         t.start()
         time.sleep(1)
-    assert len(cameras) > 0
     # we'll make the tracking camera the first greyscale one if there is one, otherwise the 0th one.
     usecam = cameras[0]
     print("looking for camera to use for tracking...")
@@ -239,12 +259,15 @@ def startup():
             print("Not colour cam")
             usecam = cam
             # break
+
+    # ?
     tracking = Tracking(message_queue, cam.photo_queue)
-    t = Process(target=tracking.worker)
+    t = multiprocessing.Process(target=tracking.worker)
     t.start()
 
+    # ?
     rotate = Rotate(message_queue)
-    t = Process(target=rotate.worker)
+    t = multiprocessing.Process(target=rotate.worker)
     t.start()
 
     share_ip()
@@ -291,10 +314,13 @@ def rotatetoangle(targetangle):
 
 
 @app.route('/setlabel/<string:label>')
-def setlabel(label):
+def setlabel(label: str):
+    # Trim first character due to empty string bug in front-end
+    label = label[1:]
+
     for camera in cameras:
-        camera.label.value = bytes(label[1:], 'utf-8')
-    return "Set to %s" % label[1:]
+        camera.label.value = label.encode('utf-8')
+    return "Set to %s" % label
 
 
 @app.route('/reboot')
@@ -449,7 +475,8 @@ def getimage(number, camera_id=0):
 
 
 @app.route('/getcontact')
-def getcontact():  # TODO this is mostly done by getimage, maybe just return an index?
+def getcontact():
+    # TODO this is mostly done by getimage, maybe just return an index?
     # global tracking
     try:
         photoitem = tracking.tracking_queue.get_nowait()
@@ -470,7 +497,7 @@ def getcontact():  # TODO this is mostly done by getimage, maybe just return an 
             newtracklist.append(track)
         return jsonify(
             {'index': photoitem['index'], 'photo': img, 'record': photoitem['record'], 'track': newtracklist})
-    except Empty:
+    except queue.Empty:
         return jsonify(None)
 
 
@@ -511,6 +538,10 @@ def getimagecentre(number, camera_id=0):
     return jsonify({'index': photoitem['index'], 'photo': img.tolist(), 'record': photoitem['record']})
 
 
-startup()
-if __name__ == "__main__":
+def main():
+    startup()
     app.run(host="0.0.0.0")
+
+
+if __name__ == "__main__":
+    main()
