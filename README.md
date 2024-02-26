@@ -89,8 +89,8 @@ This is a simplified overview of the different parts of this system and how they
 ```mermaid
 flowchart LR
     user(("Web browser"))
-    backend[API\nFlask app\nbee_track/core.py]
-    frontend[Javascript GUI\nhttp.server\nwebinterface/]
+    backend["API\nFlask app\nbee_track/core.py"]
+    frontend["Javascript GUI\nhttp.server\nwebinterface/"]
     cameras
     user <--"HTTP 80" --> frontend
     frontend <--"HTTP 5000"--> backend
