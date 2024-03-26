@@ -8,7 +8,8 @@ app = Flask(__name__)
 #Compress(app)
 CORS(app)
 from glob import glob
-from retrodetect import getblockmaxedimage
+from retrodetect.image_processing import getblockmaxedimage
+
 import argparse
 import webbrowser
 import os
@@ -30,7 +31,7 @@ print("Absolute path to images:")
 print(os.path.abspath(pathtoimgsdir))
 pathtoimgsdir = os.path.abspath(pathtoimgsdir)
 pathtoimgs = sorted(glob(pathtoimgsdir+'/*/'))
-
+##SC: it seems there must be subdirectories in the data folder although the below code seems to work too
 
 if (len(pathtoimgs)==0):
     print("Failed to find any folders in the path, using base path given as camera folder.")
@@ -38,8 +39,10 @@ if (len(pathtoimgs)==0):
 print("Found the following camera folders:")
 print(pathtoimgs)
     
+#SC: scriptpath is not used elsewhere
 scriptpath = os.path.dirname(os.path.realpath(__file__))
 os.chdir(scriptpath)
+print('scriptpath')
 print(scriptpath)
 #indexhtml = os.path.join(scriptpath, 'index.html')
 #webbrowser.open("file://index.html",new=2)
@@ -51,6 +54,8 @@ if 'port' in args:
 else:
     port = 5000
 
+#SC: Do we want to get configfile or the one created is fine? is it for @app.route('/configure/<string:path>')
+
 if args.config is not None:
     configfilename = pathtoimgsdir+'/'+args.config
 else:
@@ -58,7 +63,7 @@ else:
 print(configfilename)
 
 
-
+#SC: works well
 def getimgfilelist(path,camid=None):
     if camid is not None:
         return sorted(glob('%s/*%s*.np'%(path,camid)))
@@ -81,7 +86,8 @@ def getfnfordatetimeandcamid(path,camid,datetime):
 
 
 def getdatetimefromfilename(fn):
-    res = re.findall('photo_object_[0-9A-Z]*_([0-9]{8}_[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{6})_',fn)
+    #res = re.findall('photo_object_[0-9A-Z]*_([0-9]{8}_[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{6})_',fn)
+    res = re.findall('photo_object_([0-9]{8}_[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{6})_',fn)
     if len(res)==0:
         return None
     else:
@@ -146,7 +152,7 @@ from datetime import datetime
 import numpy as np
 import re
 @app.route('/getindexoftime/<int:cam>/<string:dtstring>')
-def getindexoftime(cam,dtstring):
+def getindexoftime(cam:int ,dtstring):
     fns = getimgfilelist(pathtoimgs[cam])
     #targ = converttodt(dtstring) #'20210720_13:58:00.000000')
     #gotoNum = np.argmin(np.abs([(converttodt(re.findall('.*_([0-9]{8}_[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{6})__',fn)[0])-targ).total_seconds() for fn in fns]))
@@ -362,7 +368,7 @@ def load_img(fn):
         data = rawdata['record']
     return n,img,data
     
-from retrodetect import getshift, shiftimg
+from retrodetect.image_processing import getshift, shiftimg
 
 def getcachedshift(cam,internalcam,number):
 
@@ -425,6 +431,7 @@ def getimage(cam,internalcam,number,x1,y1,x2,y2):
     #img[:,int(img.shape[1]/2)] = 255    
     return jsonify({'index':n,'photo':img.tolist(),'record':data})
 
+#SC: If you have the debugger disabled or trust the users on your network, you can make the server publicly available simply by adding --host=0.0.0.0 to the command line:This tells your operating system to listen on all public IPs.
 if __name__ == "__main__":
-    app.run(host="0.0.0.0",port=port)
+    app.run(host="0.0.0.0",port=port, debug=True)
 
