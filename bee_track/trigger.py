@@ -12,7 +12,9 @@ logger = logging.getLogger(__name__)
 
 class Trigger(Configurable):
     """
-    Send a signal to the camera to take an exposure.
+    A worker to handle triggering the GPIO pins, etc.
+
+    E.g. Send a signal to the camera to take an exposure.
     """
 
     def __init__(self, message_queue, cam_trigger, t=2.0):
@@ -22,6 +24,7 @@ class Trigger(Configurable):
         self.manager = multiprocessing.Manager()
         self.flashselection = self.manager.list()
         self.index = multiprocessing.Value('i', 0)
+        'Incrementing identifier number per trigger event'
         self.record = self.manager.list()
         self.direction = 0
         self.flash_select_pins = [14, 15, 18, 23]  # [8,10,12,16] #Board->BCM pins
@@ -50,7 +53,7 @@ class Trigger(Configurable):
 
     def trigger_camera(self, fireflash: bool, endofset: bool):
         """
-        Send trigger to camera (and flash)
+        Send trigger to camera (and flash, optionally.)
 
         fireflash = boolean: true=fire flash
         endofset = boolean: whether this is the last photo of a set (this will then tell the tracking system to look for the bee).
@@ -88,7 +91,7 @@ class Trigger(Configurable):
              'flashselection': list(self.flashselection), 'triggertime': triggertime,
              'triggertimestring': triggertimestring})
         print("Incrementing trigger index from %d" % self.index.value)
-        self.index.value = self.index.value + 1
+        self.index.value += 1
 
         # Software trigger...
         # self.cam_trigger.set()

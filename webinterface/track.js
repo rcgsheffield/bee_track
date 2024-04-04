@@ -12,15 +12,19 @@ function getdatestring() {
     return st
 }
 
+// Function to display a message in the console and scroll to the bottom
 function msg(message) {
+     // Ensure the message ends with a new-line character
     if (message.slice(-1) != '\n') {
         message = message + "\n";
     }
-    $("#console").val($("#console").val() + message);// + "\n");
+    // Append message to console
+    $("#console").val($("#console").val() + message);
+
+    // Scroll the console to the bottom to display the latest message
     var con = $('#console');
     con.scrollTop(con[0].scrollHeight - con.height());
 }
-
 
 image = 0
 imagecount = 0
@@ -37,6 +41,7 @@ $.ajax({
 });
 $('button#start').click(function () {
     msg('Starting...');
+    // Construct the URL of the API endpoint
     url = "http://" + $('input#url').val() + "/start";
     $.ajax({
         url: url,
@@ -74,7 +79,9 @@ $('button#imagedownx10').click(function () {
     image = image - 10;
 })
 
+// Regular status updates
 
+// Get free disk space on tracker
 setInterval(function () {
     url = "http://" + $('input#url').val() + "/getdiskfree";
     $.ajax({
@@ -85,6 +92,7 @@ setInterval(function () {
     });
 }, 60000);
 
+// Get battery level
 setInterval(function () {
     url = "http://" + $('input#url').val() + "/getbattery";
     $.ajax({
@@ -102,7 +110,6 @@ setInterval(function () {
 
 
 setInterval(function () {
-
     url = "http://" + $('input#url').val() + "/getimagecount";
     $.ajax({
         url: url,

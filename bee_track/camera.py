@@ -3,7 +3,7 @@ import multiprocessing
 import pickle
 import threading
 
-# TODO what's this?
+# https://github.com/SheffieldMLtracking/QueueBuffer
 from QueueBuffer import QueueBuffer
 import numpy as np
 
@@ -45,6 +45,9 @@ def downscalecolour(img, blocksize):
 
 
 class Camera(Configurable):
+    """
+    A worker to reads in image data from a camera.
+    """
 
     def __init__(self, message_queue, record, cam_trigger, cam_id=None):
         """
@@ -55,6 +58,7 @@ class Camera(Configurable):
         self.record = record
         self.label = multiprocessing.Array('c', 100)
         self.index = multiprocessing.Value('i', 0)
+        'Incrementing identifier number per capture (i.e. image count)'
         self.savephotos = multiprocessing.Value('b', True)
         self.fastqueue = multiprocessing.Value('b', False)  ###THIS WILL STOP PROCESSING
         self.test = multiprocessing.Value('b', False)
@@ -106,8 +110,9 @@ class Camera(Configurable):
         while True:
             # print("waiting for photo")
 
-            if self.debug: print(
-                'Blocking started for getting photo at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
+            if self.debug:
+                print('Blocking started for getting photo at %s' % (
+                    datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
             photo = self.get_photo(getraw=self.fastqueue.value)
             print(".", end="", flush=True)
             if self.debug: print('Got photo at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
@@ -191,12 +196,14 @@ class Camera(Configurable):
                         camidstr, triggertime_string, self.label.value.decode('utf-8'), self.index.value)
                     photo_object['filename'] = filename
                     self.message_queue.put("Saved Photo: %s" % filename)
-                    if self.debug: print(
-                        'starting save at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
-                    pickle.dump(photo_object, open(filename, 'wb'))
-                    if self.debug: print(
-                        'finished save at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
-                    if self.info: print("Saved photo as %s" % filename)
+                    if self.debug:
+                        print('starting save at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
+                    with open(filename, 'wb') as file:
+                        pickle.dump(photo_object, file)
+                    if self.debug:
+                        print('finished save at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
+                    if self.info:
+                        print("Saved photo as %s" % filename)
                 else:
                     filename = 'photo_object_%s_%s.np' % (
                         camidstr, datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f"))
@@ -206,7 +213,7 @@ class Camera(Configurable):
                     self.message_queue.put("Saved Photo: %s" % filename)
                     # np.save(open('photo_%04i.np' % self.index.value,'wb'),photo.astype(np.ubyte))
             print("Incrementing camera index, from %d" % self.index.value)
-            self.index.value = self.index.value + 1
+            self.index.value += 1
 
     def close(self):
         """

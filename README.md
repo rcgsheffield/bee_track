@@ -1,7 +1,14 @@
-# bee_track
-Tracking software to run on pi
+# Bumblebee Tracking System
+This is a web-based bee tracking system that runs on a Raspberry Pi that may be accessed via a mobile phone. It controls a collection of cameras and captures data.
 
-# Getting the pi set up
+This code repository contains two systems:
+
+- a front-end user interface implemented in HTML and Javascript;
+- a back-end API implemented using the Flask web framework.
+
+# Installation
+
+## Getting the RPi set up
 
 To make it possible to ssh into, use:
 
@@ -23,7 +30,7 @@ Edit `/etc/wpa_supplicant/wpa_supplicant.conf`, enter:
         psk="PASSWORD"
     }
 
-# Installation
+# Dependencies
 
 Download the aravis library:
 
@@ -105,18 +112,44 @@ frontend <--"HTTP 5000"--> backend
 
 ## API architecture
 
-The Flask application has four components which run in separate threads:
+The Flask application has four main components, which are workers that run in separate threads:
 
-- Cameras
-- Triggers
-- Rotation
-- Tracking
+- Cameras: reads in image data from a camera.
+- Trigger: handles triggering the GPIO pins, etc.
+- Rotation: sends a rotation signal to a stepper motor via GPIO pins.
+- Tracking: takes images from the greyscale camera's image queue (cam.photo_queue) and looks for the tag
 
 Each thread has a worker process with a configuration message queue.
 
+## User interface
+
+The front-end is implemented using jQuery, a popular JavaScript library for manipulating web pages. In simple terms, each HTML form widget in [webinterface/index.html](./webinterface/index.html) has an associated behaviour determined by the JavaScript code in [webinterface/track.js](./webinterface/track.js), which listens for certain events such as button clicks and makes a call to the back-end API using AJAX (Asynchronous JavaScript and XML).
+
+| Button         | Button ID | Endpoint | Behaviour                   |
+| -------------- | --------- | -------- | --------------------------- |
+| Capture: Start | `#start`  | `/start` | Starts camera data capture. |
+|                |           |          |                             |
+|                |           |          |                             |
+
+There is a JavaScript function called `msg()` that prints message to the "console" which is a HTML text area.
+
 # Usage
 
-TODO
+The user interface is designed to control the bee tracker system.
+
+1. Access the user interface
+2. Enter a label for your files
+3. Under capture, click "Start"
+4. Under capture, click "Stop"
+
+## API usage
+
+The API returns HTTP responses.
+
+```bash
+$ curl http://192.168.50.58:5000/getimagecount
+42
+```
 
 # Development
 

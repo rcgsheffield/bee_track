@@ -1,4 +1,3 @@
-import datetime
 import multiprocessing
 import time
 
@@ -11,7 +10,7 @@ from configurable import Configurable
 
 class Rotate(Configurable):
     """
-    This is a worker that sends a rotation signal via GPIO pins.
+    This is a worker that sends a rotation signal to a stepper motor via GPIO pins.
     """
 
     def __init__(self, message_queue):

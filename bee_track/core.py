@@ -15,6 +15,7 @@ import queue
 from glob import glob
 from datetime import datetime as dt
 from typing import Optional
+import threading
 
 import psutil
 import flask
@@ -145,8 +146,11 @@ def getdiskfree():
 
 @app.route('/getbattery')
 def getbattery():
+    """
+    Log battery info to file
+    """
     batstr = read_batteries()
-    # Log battery info to file
+    # Append to text file
     with open("battery_status.txt", "a") as battery:
         battery.write(batstr)
     return batstr
@@ -297,19 +301,17 @@ def start():
     """
     Start camera data capture.
     """
-    # TODO what is the index?
-    nextindex = max([camera.index.value for camera in cameras] + [trigger.index.value])
+    # Find the highest value of the index for any camera or the trigger
+    next_index = max([camera.index.value for camera in cameras] + [trigger.index.value])
 
-    # reset indicies
+    # Set all camera indices and the trigger index to that value
     for camera in cameras:
-        camera.index.value = nextindex
-    trigger.index.value = nextindex
+        camera.index.value = next_index
+    trigger.index.value = next_index
 
-    # for camera in cameras:
-    #    app.logger.info(camera.index.value)
-    # app.logger.info(trigger.index.value)
-
+    # Enable the trigger event
     trigger.run.set()
+
     return "Collection Started"
 
 
@@ -318,6 +320,7 @@ def stop():
     """
     Stop camera data capture
     """
+    # Disable the trigger event
     trigger.run.clear()
     return "Collection Stopped"
 
@@ -396,26 +399,19 @@ def zip():
     return "Zipping Started"
 
 
-from threading import Thread
-from time import sleep
-
-
 def threaded_function():
-    while (True):
+    # TODO this should probably be a separate service, not part of the web app
+    while True:
         app.logger.info("running auto zip")
         # zip() #disabled
-        sleep(600)
+        raise NotImplementedError
+        time.sleep(600)
 
 
-thread = Thread(target=threaded_function)
+# TODO what's this for ???
+thread = threading.Thread(target=threaded_function)
 thread.start()
 
-
-# import threading
-# ticker = threading.Event()
-# while not ticker.wait(600):
-#    app.logger.info("AUTO ZIP")
-#    zip()
 
 @app.route('/update')
 def update():
@@ -454,10 +450,13 @@ def lowresmaximg(img, blocksize=10):
 
 @app.route('/getimagecount')
 def getimagecount():
+    """
+    Get the total number of images.
+    """
     try:
-        return str(cameras[0].index.value - 1)  # gets index of current image...
-        # return str(cameras[0].photo_queue.len())
-    except Empty:
+        # Get  index of current image
+        return str(cameras[0].index.value - 1)
+    except IndexError:
         return "No items"
 
 
@@ -467,7 +466,7 @@ def getimagewithindex(photo_queue, idx):
         if item is None: continue
         if item['index'] == idx:
             return item
-    return None
+    return
 
 
 @app.route('/getimage/<int:number>/<int:camera_id>')
@@ -496,7 +495,7 @@ def getimage(number, camera_id=0):
             track['y'] = int(track['y'])
             newtracklist.append(track)
     else:
-        newtracklist = []
+        newtracklist = list()
     return jsonify(
         {'index': photoitem['index'], 'photo': img.tolist(), 'record': photoitem['record'], 'track': newtracklist})
 
@@ -567,6 +566,7 @@ def getimagecentre(number: int, camera_id: int = 0):
 
 def main():
     startup()
+    # Listen on all incoming addresses
     app.run(host="0.0.0.0")
 
 

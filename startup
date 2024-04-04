@@ -2,7 +2,7 @@ sleep 20
 export GI_TYPELIB_PATH=$GI_TYPELIB_PATH:/home/pi/aravis/build/src
 export LD_LIBRARY_PATH=/home/pi/aravis/build/src
 cd /home/pi/bee_track/webinterface
-python3 -m http.server &
+python3 -m http.server 8000 &
 
 sudo sysctl -w net.core.rmem_max=67108864 net.core.rmem_default=67108864
 sudo sysctl -w net.ipv4.route.flush=1

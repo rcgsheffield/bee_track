@@ -25,6 +25,10 @@ def scale(v):
 
 
 def read_batteries():
+    """
+    Get battery level information.
+    """
+
     scaleval = 0.0164
     # Open SPI bus
     spi = spidev.SpiDev()
