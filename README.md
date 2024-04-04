@@ -25,11 +25,11 @@ Edit `/etc/wpa_supplicant/wpa_supplicant.conf`, enter:
 
 # Installation
 
-Download the Aravis library:
+Download the aravis library:
 
     git clone https://github.com/AravisProject/aravis.git
 
-Or download earlier version from
+Or donwload earlier version from
 http://ftp.gnome.org/pub/GNOME/sources/aravis/0.6/
 
 then if you need the viewer (although I did find I had to split these installs).
@@ -57,30 +57,38 @@ for a while now aravis has used meson for building...
 
 Download this tool
 
-    pip install git+https://github.com/lionfish0/bee_track.git
+```bash
+pip install git+https://github.com/lionfish0/bee_track.git
+```
 
-In /etc/rc.local add line:
+In `/etc/rc.local` add line:
 
-    su - pi -c /home/pi/bee_track/startup &
+```bash
+su - pi -c /home/pi/bee_track/startup &
+```
 
 Also to make numpy work:
 
-    sudo apt install libatlas3-base
-    sudo pip3 install numpy
+```bash
+sudo apt install libatlas3-base
+sudo pip3 install numpy
+```
 
 Also:
 
-    pip3 install scipy
-    git clone https://github.com/lionfish0/retrodetect.git
-    cd retrodetect
-    pip3 install -e .
-    git clone https://github.com/lionfish0/QueueBuffer.git
-    cd QueueBuffer
-    pip3 install -e .
-    pip3 install libsvm
-    pip3 install -U flask-cors
-    pip3 install mem_top
-    pip3 install flask_compress
+```bash
+pip3 install scipy
+git clone https://github.com/lionfish0/retrodetect.git
+cd retrodetect
+pip3 install -e .
+git clone https://github.com/lionfish0/QueueBuffer.git
+cd QueueBuffer
+pip3 install -e .
+pip3 install libsvm
+pip3 install -U flask-cors
+pip3 install mem_top
+pip3 install flask_compress
+```
 
 # Architecture
 
@@ -88,105 +96,46 @@ This is a simplified overview of the different parts of this system and how they
 
 ```mermaid
 flowchart LR
-    user(("Web browser"))
-    backend["API\nFlask app\nbee_track/core.py"]
-    frontend["Javascript GUI\nhttp.server\nwebinterface/"]
-    cameras
-    user <--"HTTP 80" --> frontend
-    frontend <--"HTTP 5000"--> backend
-    backend --"Aravis/GPIO"--> cameras
+user(("Web\nbrowser"))
+backend[API\nFlask app\nbee_track/core.py]
+frontend[Javascript GUI\nhttp.server\nwebinterface/]
+user <--"HTTP 80" --> frontend
+frontend <--"HTTP 5000"--> backend
 ```
 
-## Frontend app
+## API architecture
 
-For more information about the user interface, see [webinterface/README.md](./webinterface/README.md).
+The Flask application has four components which run in separate threads:
 
-## Backend app
+- Cameras
+- Triggers
+- Rotation
+- Tracking
 
-The `main`() function runs `startup()` which initialises the system and runs the Flask application. This sets up multiple parallel processes that control different parts of the system which are stored in the global scope of the application.
+Each thread has a worker process with a configuration message queue.
 
-`message_queue` is a first-in-first-out `multiprocessing.Queue` that's used for passing messages from the file manager and triggers.
+# Usage
 
-### Workers
+TODO
 
-What is `Configurable`? `Configurable.worker()` is the function that runs in a separate process. Each worker (`Configurable`) has a `config_worker()` method that runs in a separate thread and listened for updated options which are used to change the attributes of that instance.
+# Development
 
-Parallel processes:
+## Testing
 
-* Trigger
-* Each camera
-* Tracking
-* Rotate
+TODO
 
-### Cameras
+## Virtual environment
 
-`Cameras` implement ?
+These are instructions for running the API app on a virtual Raspberry Pi machine using [dockerpi](https://github.com/lukechilds/dockerpi).
 
-What is tracking?
-
-What is rotate?
-
-```mermaid
----
-title: Bee tracker class diagram
----
-classDiagram
-class Configurable {
-    Queue config_queue
-    Queue message_queue
-    config_worker()
-    worker()
-}
-class Camera {
-    object record
-    object cam_trigger
-    object cam_id
-    setup_camera()
-    camera_config_worker()
-    camera_trigger()
-    get_photo(getraw)
-    close()
-}
-class Trigger {
-    Event cam_trigger
-    float t
-    trigger_camera(fireflash, endofset)
-}
-class Rotate {
-	float targetangle
-}
-
-Aravis_Camera --|> Camera
-Camera --|> Configurable
-FlashRelay --|> Configurable
-Rotate --|> Configurable
-Tracking --|> Configurable
-Trigger --|> Configurable
-```
-
-
-
-# Virtual environment
-
-These are instructions for running the API app on a virtual Raspberry Pi machine using [dockerpi](https://github.com/lukechilds/dockerpi). This is necessary to load the libraries that only work on Pi such as `RPi.GPIO`.
-
-1. Install [Docker Engine](https://docs.docker.com/engine/).
+1. Install Docker
 2. Download the latest stable [Raspberry Pi OS Lite image](https://www.raspberrypi.com/software/operating-systems/)
 3. Decompress the image `unxz *.xz`
-4. Specify [the options](https://github.com/lukechilds/dockerpi?tab=readme-ov-file#which-machines-are-supported) for the emulator
-5. Run a virtual machine (`pi3` means Rasp. Pi version 3, which is under experimental support) using the [docker run](https://docs.docker.com/reference/cli/docker/container/run/) command.
+4. Run a virtual machine (`p3` means Rasp. Pi version 3, which is under experimental support)
 
 ```bash
 image_path="./2023-12-11-raspios-bookworm-arm64-lite.img"
-pi_version="pi3"
-docker run -it -v $image_path:/sdcard/filesystem.img lukechilds/dockerpi:vm $pi_version
+docker run -it -v $image_path:/sdcard/filesystem.img lukechilds/dockerpi:vm p3
 ```
 
-We're using the `dockerpi:vm` container, which doesn't include the Pi OS image, because we want to use the latest one that we downloaded ourselves. We have to run the container in interactive mode (the `-it` option) because it's an ARM [emulator using QEMU](https://www.qemu.org/docs/master/system/target-arm.html), not a proper container base image.
-
-An example command might be:
-
-```bash
-docker run -it -v .\2023-10-10-raspios-bookworm-armhf-lite.img:/sdcard/filesystem.img lukechilds/dockerpi:vm pi3
-```
-
+TODO this doesn't work
