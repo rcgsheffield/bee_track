@@ -21,6 +21,7 @@ import flask
 import flask_cors
 import flask_compress
 from flask import jsonify
+import requests
 import numpy as np
 
 import bee_track.camera
@@ -64,10 +65,14 @@ def hello_world():
 
 @app.route('/setdatetime/<string:timestring>')
 def setdatetime(timestring):
-    # NOTE: This requires:
-    #        sudo visudo
-    # then add:
-    #        pi ALL=(ALL) NOPASSWD: /bin/date
+    """
+    Set system clock.
+
+    This requires:
+      sudo visudo
+    then add:
+      pi ALL=(ALL) NOPASSWD: /bin/date
+    """
     d = dt.strptime(timestring, "%Y-%m-%dT%H:%M:%S")
     os.system('sudo /bin/date -s %s' % d.strftime("%Y-%m-%dT%H:%M:%S"))
     return "system time set successfully"
@@ -85,12 +90,12 @@ def addtoconfigvals(component, field, value):
 
 
 @app.route('/set/<string:component>/<string:field>/<string:value>')
-def set(component: str, field: str, value: str):
+def set(component, field, value):
     """
-    Set an option on all instances of a certain type (component).
+    Configure an option for a component by passing that key-value pair to the configuration queue for that
+    worker process.
     """
-    # TODO: Secure?
-    print(component, field, value)
+    app.logger.info(component, field, value)
     addtoconfigvals(component, field, value)
 
     comp = None
@@ -107,10 +112,12 @@ def set(component: str, field: str, value: str):
 
 def setfromconfigvals():
     """
-    ???
+    Set app config values based on saved values.
     """
     try:
-        configvals = pickle.load(open('configvals.pkl', 'rb'))
+        with open('configvals.pkl', 'rb') as file:
+            configvals = pickle.load(file)
+            app.logger.info("Loaded %s", file.name)
         for component, fields in configvals.items():
             for field, value in fields.items():
                 set(component, field, value)
@@ -120,13 +127,7 @@ def setfromconfigvals():
 
 @app.route('/get/<string:component>/<string:field>')
 def get(component, field):
-    """
-    ???
-    """
-    # TODO Secure?
-
-    print(component, field)
-
+    app.logger.info(component, field)
     comp = None
     if component == 'camera': comp = cameras[0]
     if component == 'trigger': comp = trigger
@@ -191,45 +192,49 @@ def get_ip():
 
 
 def share_ip():
-    import requests
+    """
+    Publish this device's network details to the remote server
+    """
 
     ipaddr = get_ip()
     try:
-        print("Trying to get our ID")
-        devid = open('device_id.txt', 'r').read()
-    except FileNotFoundError:
-        print("Failed to find ID")
-        devid = '9999'
-    print("Using ID: %s" % devid)
+        app.logger.info("Trying to get our ID")
+        with open('device_id.txt', 'r') as file:
+            device_id = file.read()
+            app.logger.info("Read '%s'", file.name)
+    except FileNotFoundError as e:
+        app.logger.error(e)
+        app.logger.error("Failed to find ID")
+        device_id = '9999'
+    app.logger.info("Using ID: %s" % device_id)
     try:
-        print("Trying to access remote server")
-        url = 'http://michaeltsmith.org.uk:5000/set/%s/%s' % (devid.strip(), ipaddr)
-        print(url)
-        requests.get(url, timeout=10)  # tries to share IP address on server
-        #
-        ##temporary test...
-        # import time
-        # time.sleep(10) #simulate delay...
-    except:
-        print("FAILED")
-        pass
+        app.logger.info("Trying to access remote server")
+        url = 'http://michaeltsmith.org.uk:5000/set/%s/%s' % (device_id.strip(), ipaddr)
+        app.logger.info(url)
+        # tries to share IP address on server
+        requests.get(url, timeout=10)
+    except requests.exceptions.RequestException as exc:
+        app.logger.error(exc)
+        raise
 
 
-@app.route('/setid/<int:device_id>')
-def setid(device_id: int):
-    print("Updating device ID: %s" % str(device_id))
+@app.route('/setid/<int:identifier>')
+def setid(identifier: int):
+    """
+    Set this device's identifier.
+    """
+    app.logger.info("Updating device ID: %s" % str(identifier))
     with open('device_id.txt', 'w') as file:
-        file.write(str(device_id))
-    print("Updated")
+        file.write(str(identifier))
+        app.logger.info("Updated %s", file.name)
     return "Done"
 
 
 @app.route('/startup')
 def startup():
     """
-    Initialise the web server
+    Initialise the web server and start the component processes.
     """
-
     global message_queue
     global trigger
     global rotate
@@ -238,8 +243,10 @@ def startup():
     global cam_trigger
     global file_manager
 
+    # Only run this once
     if trigger is not None:
         return "startup already complete"
+
     message_queue = multiprocessing.Queue()
 
     file_manager = FileManager(message_queue)
@@ -262,12 +269,12 @@ def startup():
         time.sleep(1)
     # we'll make the tracking camera the first greyscale one if there is one, otherwise the 0th one.
     usecam = cameras[0]
-    print("looking for camera to use for tracking...")
+    app.logger.info("looking for camera to use for tracking...")
     for cam in cameras:
-        print("Cam...")
-        print(cam.colour_camera.value)
+        app.logger.info("Cam...")
+        app.logger.info(cam.colour_camera.value)
         if cam.colour_camera.value == 0:
-            print("Not colour cam")
+            app.logger.info("Not colour cam")
             usecam = cam
             # break
 
@@ -279,6 +286,7 @@ def startup():
     rotate = Rotate(message_queue)
     multiprocessing.Process(target=rotate.worker).start()
 
+    # Publish this device's IP to remote server
     share_ip()
     setfromconfigvals()
     return "startup successful"
@@ -298,8 +306,8 @@ def start():
     trigger.index.value = nextindex
 
     # for camera in cameras:
-    #    print(camera.index.value)
-    # print(trigger.index.value)
+    #    app.logger.info(camera.index.value)
+    # app.logger.info(trigger.index.value)
 
     trigger.run.set()
     return "Collection Started"
@@ -344,7 +352,7 @@ def setlabel(label: str):
 
 @app.route('/reboot')
 def reboot():
-    print("Reboot")
+    app.logger.info("Reboot")
     os.system('sudo reboot')
     return "Reboot Initiated"
 
@@ -376,15 +384,15 @@ def zip():
     now = datetime.datetime.now()
 
     filename = now.strftime("%Y%m%d%H%M%S.zip")
-    print("Zip")
+    app.logger.info("Zip")
     import os
     try:
         os.mkdir('zips')  # somewhere to store the zips.
     except FileExistsError:
-        print("Woah")
+        app.logger.info("Woah")
 
     runcommandnowait('zip -mT zips/%s *.np' % filename)
-    print("Started")
+    app.logger.info("Started")
     return "Zipping Started"
 
 
@@ -394,7 +402,7 @@ from time import sleep
 
 def threaded_function():
     while (True):
-        print("running auto zip")
+        app.logger.info("running auto zip")
         # zip() #disabled
         sleep(600)
 
@@ -406,7 +414,7 @@ thread.start()
 # import threading
 # ticker = threading.Event()
 # while not ticker.wait(600):
-#    print("AUTO ZIP")
+#    app.logger.info("AUTO ZIP")
 #    zip()
 
 @app.route('/update')
@@ -523,14 +531,14 @@ def getcontact():
 @app.route('/addtest')
 def addtestdata():
     for fn in sorted(glob('*.np')):
-        print(fn)
+        app.logger.info(fn)
         try:
             photo = np.load(fn, allow_pickle=True)
         except EOFError:
-            print("file might be empty")
+            app.logger.info("file might be empty")
             continue
         except OSError:
-            print("File might not be a pickle file")
+            app.logger.info("File might not be a pickle file")
             continue
         if 'img' not in photo: continue
         if photo['img'] is None: continue
@@ -540,7 +548,7 @@ def addtestdata():
 
 @app.route('/getimagecentre/<int:number>/<int:camera_id>')
 @app.route('/getimagecentre/<int:number>')
-def getimagecentre(number, camera_id=0):
+def getimagecentre(number: int, camera_id: int = 0):
     # global camera
     # photoitem = cameras[camera_id].photo_queue.read(number)
     photoitem = getimagewithindex(cameras[camera_id].photo_queue, number)
