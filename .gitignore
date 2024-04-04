@@ -133,3 +133,6 @@ dmypy.json
 
 # Raspberry Pi OS images
 *.img
+
+# Data for testing Btviewer
+bin/Data

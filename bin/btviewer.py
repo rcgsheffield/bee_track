@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-from flask import Flask, make_response, jsonify
+from flask import Flask, make_response, jsonify, render_template
 import numpy as np
 from flask_cors import CORS
 #from flask_compress import Compress
 app = Flask(__name__)
-#Compress(app)
-CORS(app)
+#Compress(app) SC: a mechanism for integrating applications. CORS defines a way for client web applications that are loaded in one domain to interact with resources in a different domain.
+CORS(app) 
 from glob import glob
 from retrodetect.image_processing import getblockmaxedimage
 
@@ -17,7 +17,7 @@ import re
 import retrodetect
 import pickle
 
-parser = argparse.ArgumentParser(description='Provide simple interface to label bee images')
+parser = argparse.ArgumentParser(prog = 'btviewer', description='Provide simple interface to label bee images')
 parser.add_argument('imgpath',type=str,help='Path to images')
 parser.add_argument('--refreshcache',help='Whether to refresh the cache',action="store_true")
 parser.add_argument('--port',required=False,type=int,help='Port')
@@ -25,6 +25,7 @@ parser.add_argument('--config',required=False,type=str,help='Config Filename, e.
 
 
 args = parser.parse_args()
+print(args)
 
 pathtoimgsdir = args.imgpath #'/home/mike/Documents/Research/bee/photos2020/photos_June20'
 print("Absolute path to images:")
@@ -46,10 +47,10 @@ print('scriptpath')
 print(scriptpath)
 #indexhtml = os.path.join(scriptpath, 'index.html')
 #webbrowser.open("file://index.html",new=2)
-webbrowser.open("file://" + os.path.realpath('index.html'),new=2)
+webbrowser.open("file://" + os.path.realpath('index.html'),new=2) #SC https://docs.python.org/3.11/library/webbrowser.html#webbrowser.new
+#webbrowser.open("http://localhost:5000")
 
-
-if 'port' in args: 
+if args.port is not None:
     port = args.port
 else:
     port = 5000
@@ -57,17 +58,21 @@ else:
 #SC: Do we want to get configfile or the one created is fine? is it for @app.route('/configure/<string:path>')
 
 if args.config is not None:
-    configfilename = pathtoimgsdir+'/'+args.config
+    configfilename = os.path.join(pathtoimgsdir, args.config)
 else:
-    configfilename = pathtoimgsdir+'/config_unnamed.json'
+    configfilename = os.path.join(pathtoimgsdir, 'config_unnamed.json')
 print(configfilename)
 
 
 #SC: works well
-def getimgfilelist(path,camid=None):
+
+#####Function Chunks#####
+
+def getimgfilelist(path, camid=None):
     if camid is not None:
         return sorted(glob('%s/*%s*.np'%(path,camid)))
     else:
+        #return sorted(glob('Data\\folder1\\*.np'))
         return sorted(glob('%s/*.np'%(path)))
 
 def getcamfromfilename(fn):
@@ -78,6 +83,7 @@ def getcamfromfilename(fn):
         return res[0]
     
 def getfnfordatetimeandcamid(path,camid,datetime):
+    #fns = glob(f'Data\\folder1\\*{camid}_{datetime}*.np')
     fns = glob('%s/*%s_%s*.np'%(path,camid,datetime))
     if len(fns)==0:
         return None
@@ -86,12 +92,13 @@ def getfnfordatetimeandcamid(path,camid,datetime):
 
 
 def getdatetimefromfilename(fn):
-    #res = re.findall('photo_object_[0-9A-Z]*_([0-9]{8}_[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{6})_',fn)
-    res = re.findall('photo_object_([0-9]{8}_[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{6})_',fn)
+    res = re.findall('photo_object_[0-9A-Z]*_([0-9]{8}_[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{6})_',fn)
+    #res = re.findall('photo_object_([0-9]{8}_[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{6})_',fn)
+    #res = re.findall('(_[0-9]{2}_[0-9]{2}_[0-9]{2})', fn)
     if len(res)==0:
         return None
     else:
-        return res[0]
+        return res[0][1:]
 
 def getdatetimelist(path):
     """
@@ -101,13 +108,21 @@ def getdatetimelist(path):
     return sorted(list(set([getdatetimefromfilename(fn) for fn in fns if getdatetimefromfilename(fn) is not None])))
 
 def guesscamtypegetscore(fn):
-    photo = pickle.load(open(fn,'rb'))
+    try:
+        photo = pickle.load(open(fn,'rb'))
+    except EOFError:
+        return np.NaN
+
+
     img = photo['img']
-    if img is None: return np.NaN
+    if img is None:
+        score = np.NaN
+        #return np.NaN  
+    else:
     #e.g. 0.0001 = greyscale, 0.7 = colour
-    score = np.abs(np.mean(img[0:-2:2,0:-2:2]/2+img[2::2,2::2]/2-img[1:-2:2,1:-2:2])/np.mean(img))
+        score = np.abs(np.mean(img[0:-2:2,0:-2:2]/2+img[2::2,2::2]/2-img[1:-2:2,1:-2:2])/np.mean(img))
     return score
-    
+
 def guesscamtype(path,camid):
     score = np.nanmean([guesscamtypegetscore(fn) for fn in getimgfilelist(path,camid)[:50:5]])
     if score<0.02:
@@ -143,6 +158,7 @@ def gethash(obj):
 def converttodt(st):
     return datetime.strptime(st,'%H:%M:%S')    
 
+######
 
 camera_ids = []
 for pti in pathtoimgs:
@@ -154,11 +170,11 @@ import re
 @app.route('/getindexoftime/<int:cam>/<string:dtstring>')
 def getindexoftime(cam:int ,dtstring):
     fns = getimgfilelist(pathtoimgs[cam])
-    #targ = converttodt(dtstring) #'20210720_13:58:00.000000')
-    #gotoNum = np.argmin(np.abs([(converttodt(re.findall('.*_([0-9]{8}_[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{6})__',fn)[0])-targ).total_seconds() for fn in fns]))
+    targ = converttodt(dtstring) #'20210720_13:58:00.000000')
+    gotoNum = np.argmin(np.abs([(converttodt(re.findall('.*_([0-9]{8}_[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{6})__',fn)[0])-targ).total_seconds() for fn in fns]))
     
-    targ = converttodt(dtstring) #'13:58:00.000000')
-    gotoNum = np.argmin(np.abs([(converttodt(re.findall('.*_([0-9]{2}:[0-9]{2}:[0-9]{2})',fn)[0])-targ).total_seconds() for fn in fns]))
+    #targ = converttodt(dtstring) #'13:58:00.000000')
+    #gotoNum = np.argmin(np.abs([(converttodt(re.findall('.*_([0-9]{2}:[0-9]{2}:[0-9]{2})',fn)[0])-targ).total_seconds() for fn in fns]))
     return json.dumps(int(gotoNum))
 
 @app.route('/detectfromto/<int:cam>/<int:from_idx>/<int:to_idx>')
@@ -215,6 +231,10 @@ def detect(cam,number):
 @app.route('/')
 def hello_world():
     return 'root node of bee label API.'
+
+#@app.route('/')
+#def home_page(): 
+#    return render_template('index.html')
 
 @app.route('/filename/<int:cam>/<int:internalcam>/<int:number>')
 def filename(cam,internalcam,number):

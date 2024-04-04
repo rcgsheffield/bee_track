@@ -11,5 +11,5 @@ setup(
   keywords = ['bumblebees','ecology','tracking','retroreflectors'],
   classifiers = [],
   install_requires=['numpy'],
-  scripts=['bin/btviewer'],
+  scripts=['bin/btviewer.py'],
 )

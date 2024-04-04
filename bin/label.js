@@ -441,9 +441,10 @@ function refreshimages(){
     $.getJSON(url, function(data) {$('span#filename').text(data); });  
 
     url = "http://127.0.0.1:"+$('input#port').val()+"/getimage/"+cam+"/"+internalcam+'/'+image+"/"+Math.round(x1)+"/"+Math.round(y1)+"/"+Math.round(x2)+"/"+Math.round(y2);
-    $.getJSON(url, function(data) {$('#image').css("background-image",convertJSONtoImageURL(data,true)); currentimage=data; });  
+    setTimeout(() => $.getJSON(url, function(data) {$('#image').css("background-image",convertJSONtoImageURL(data,true)); currentimage=data; }), 1000)
+    // $.getJSON(url, function(data) {$('#image').css("background-image",convertJSONtoImageURL(data,true)); currentimage=data; });  
     
-   // await sleep(200);
+    // await sleep(200);
     url = "http://127.0.0.1:"+$('input#port').val()+"/loadpos/"+cam+'/'+internalcam+'/'+image;
     $.getJSON(url, function(data) {positions = data; console.log(url); console.log(positions); drawDots();});  
     //
