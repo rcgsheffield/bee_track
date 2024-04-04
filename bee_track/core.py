@@ -1,18 +1,22 @@
 """
 Bee tracker web API
+
+This is an API to control and capture data from multiple cameras.
 """
-from multiprocessing import Process, Queue
+
 import os
-from datetime import datetime as dt
 import subprocess
-from queue import Empty
-from psutil import disk_usage
 import multiprocessing
 import pickle
 import logging
 import time
+import socket
+import queue
 from glob import glob
+from datetime import datetime as dt
+from typing import Optional
 
+import psutil
 import flask
 import flask_cors
 import flask_compress
@@ -20,13 +24,14 @@ from flask import jsonify
 import requests
 import numpy as np
 
+import bee_track.camera
+import bee_track.camera_aravis
 from bee_track.battery import read_batteries
 from bee_track.trigger import Trigger
 from bee_track.rotate import Rotate
-from bee_track.camera_aravis import Aravis_Camera as Camera
-from bee_track.camera_aravis import getcameraids
+from bee_track.camera_aravis import Camera, AravisCamera
 from bee_track.tracking import Tracking
-from bee_track.file_manager import File_Manager
+from bee_track.file_manager import FileManager
 
 # Build Flask app
 app = flask.Flask(__name__)
@@ -38,11 +43,19 @@ log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
 # Global variables
-message_queue = None
-cameras = list()  # None
-trigger = None
-rotate = None
-tracking = None
+message_queue: Optional[multiprocessing.Queue] = None
+"FIFO message queue for the whole app"
+cameras: list[Camera] = list()
+"Cameras registered at launch, each with a process"
+trigger: Optional[Trigger] = None
+"Camera exposure worker"
+rotate: Optional[Rotate] = None
+"Rotate motor worker"
+tracking: Optional[Tracking] = None
+cam_trigger: Optional[multiprocessing.Event] = None
+"An event ?"
+file_manager: Optional[FileManager] = None
+"Photo file archiving tool"
 
 
 @app.route('/')
@@ -115,7 +128,6 @@ def setfromconfigvals():
 @app.route('/get/<string:component>/<string:field>')
 def get(component, field):
     app.logger.info(component, field)
-    """TO DO: Secure?"""
     comp = None
     if component == 'camera': comp = cameras[0]
     if component == 'trigger': comp = trigger
@@ -128,12 +140,13 @@ def get(component, field):
 
 @app.route('/getdiskfree')
 def getdiskfree():
-    return str(disk_usage('/').free)
+    return str(psutil.disk_usage('/').free)
 
 
 @app.route('/getbattery')
 def getbattery():
     batstr = read_batteries()
+    # Log battery info to file
     with open("battery_status.txt", "a") as battery:
         battery.write(batstr)
     return batstr
@@ -148,32 +161,34 @@ def configcam(instruction, value):
 
 @app.route('/getmessage')
 def getmessage():
-    msgs = ""
+    """
+    Retrieve the message queue and return the messages as a string.
+    """
+    msgs = str()
     try:
-
-        while (True):
+        while True:
             msg = message_queue.get_nowait()
-            msgs = msgs + str(msg) + "\n"
-        # return msgs
-    except Empty:
+            msgs += f"{msg}\n"
+    except queue.Empty:
         return msgs
 
 
-import socket
-
-
 def get_ip():
+    """
+    ???
+    """
     # From https://stackoverflow.com/a/28950776
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    ip = '127.0.0.1'
     try:
         # doesn't even have to be reachable
-        s.connect(('10.255.255.255', 1))
-        IP = s.getsockname()[0]
-    except Exception:
-        IP = '127.0.0.1'
+        sock.connect(('10.255.255.255', 1))
+        ip = sock.getsockname()[0]
+    except:
+        pass
     finally:
-        s.close()
-    return IP
+        sock.close()
+    return ip
 
 
 def share_ip():
@@ -218,7 +233,7 @@ def setid(identifier: int):
 @app.route('/startup')
 def startup():
     """
-    Initialise the service's processes.
+    Initialise the web server and start the component processes.
     """
     global message_queue
     global trigger
@@ -226,32 +241,32 @@ def startup():
     global cameras
     global tracking
     global cam_trigger
-    global rotate
     global file_manager
 
     # Only run this once
     if trigger is not None:
         return "startup already complete"
 
-    message_queue = Queue()
+    message_queue = multiprocessing.Queue()
 
-    file_manager = File_Manager(message_queue)
+    file_manager = FileManager(message_queue)
 
     cam_trigger = multiprocessing.Event()
 
     trigger = Trigger(message_queue, cam_trigger)
-    t = Process(target=trigger.worker)
-    t.start()
+    multiprocessing.Process(target=trigger.worker).start()
 
-    cam_ids = getcameraids()
-
+    # Initialise cameras: get list of Aravis cameras
+    cam_ids = AravisCamera.get_camera_ids()
+    if not cam_ids:
+        raise bee_track.camera.NoCamerasFoundError
+    # Iterate over available cameras ands tart a process for each one
     for cam_id in cam_ids:
-        camera = Camera(message_queue, trigger.record, cam_trigger, cam_id=cam_id)
+        app.logger.info("Camera %s", cam_id)
+        camera = AravisCamera(message_queue, trigger.record, cam_trigger, cam_id=cam_id)
         cameras.append(camera)
-        t = Process(target=camera.worker)
-        t.start()
+        multiprocessing.Process(target=camera.worker).start()
         time.sleep(1)
-    assert len(cameras) > 0
     # we'll make the tracking camera the first greyscale one if there is one, otherwise the 0th one.
     usecam = cameras[0]
     app.logger.info("looking for camera to use for tracking...")
@@ -262,13 +277,14 @@ def startup():
             app.logger.info("Not colour cam")
             usecam = cam
             # break
-    tracking = Tracking(message_queue, cam.photo_queue)
-    t = Process(target=tracking.worker)
-    t.start()
 
+    # ?
+    tracking = Tracking(message_queue, cam.photo_queue)
+    multiprocessing.Process(target=tracking.worker).start()
+
+    # ?
     rotate = Rotate(message_queue)
-    t = Process(target=rotate.worker)
-    t.start()
+    multiprocessing.Process(target=rotate.worker).start()
 
     # Publish this device's IP to remote server
     share_ip()
@@ -278,7 +294,10 @@ def startup():
 
 @app.route('/start')
 def start():
-    # global trigger
+    """
+    Start camera data capture.
+    """
+    # TODO what is the index?
     nextindex = max([camera.index.value for camera in cameras] + [trigger.index.value])
 
     # reset indicies
@@ -296,7 +315,9 @@ def start():
 
 @app.route('/stop')
 def stop():
-    # global trigger
+    """
+    Stop camera data capture
+    """
     trigger.run.clear()
     return "Collection Stopped"
 
@@ -308,17 +329,25 @@ def compress():
 
 
 @app.route('/rotatetoangle/<float:targetangle>')
-def rotatetoangle(targetangle):
+def rotatetoangle(targetangle: float):
+    """
+    TODO what's this?
+    """
+    # Save shared data
     rotate.targetangle.value = targetangle
+    # Signal the event
     rotate.rotation.set()
     return "Rotation Started"
 
 
 @app.route('/setlabel/<string:label>')
-def setlabel(label):
+def setlabel(label: str):
+    # Trim first character due to empty string bug in front-end
+    label = label[1:]
+
     for camera in cameras:
-        camera.label.value = bytes(label[1:], 'utf-8')
-    return "Set to %s" % label[1:]
+        camera.label.value = label.encode('utf-8')
+    return "Set to %s" % label
 
 
 @app.route('/reboot')
@@ -473,7 +502,8 @@ def getimage(number, camera_id=0):
 
 
 @app.route('/getcontact')
-def getcontact():  # TODO this is mostly done by getimage, maybe just return an index?
+def getcontact():
+    # TODO this is mostly done by getimage, maybe just return an index?
     # global tracking
     try:
         photoitem = tracking.tracking_queue.get_nowait()
@@ -494,7 +524,7 @@ def getcontact():  # TODO this is mostly done by getimage, maybe just return an 
             newtracklist.append(track)
         return jsonify(
             {'index': photoitem['index'], 'photo': img, 'record': photoitem['record'], 'track': newtracklist})
-    except Empty:
+    except queue.Empty:
         return jsonify(None)
 
 
