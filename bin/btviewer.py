@@ -47,8 +47,9 @@ print('scriptpath')
 print(scriptpath)
 #indexhtml = os.path.join(scriptpath, 'index.html')
 #webbrowser.open("file://index.html",new=2)
-webbrowser.open("file://" + os.path.realpath('index.html'),new=2) #SC https://docs.python.org/3.11/library/webbrowser.html#webbrowser.new
-#webbrowser.open("http://localhost:5000")
+webbrowser.open("file://" + os.path.realpath('index.html'), new=2) #SC https://docs.python.org/3.11/library/webbrowser.html#webbrowser.new
+#webbrowser.open("http://localhost:5000") SC: if we use this one with the index route, the page is shown in white background but no response
+#SC: but don't know why two browsers are opened
 
 if args.port is not None:
     port = args.port
@@ -92,14 +93,17 @@ def getfnfordatetimeandcamid(path,camid,datetime):
 
 
 def getdatetimefromfilename(fn):
-    res = re.findall('photo_object_[0-9A-Z]*_([0-9]{8}_[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{6})_',fn)
+    res = re.findall('photo_object_[0-9A-Z]*_([0-9]{8}_[0-9]{2}_[0-9]{2}_[0-9]{2})',fn)
+    #SC I changed to the above to match Mike's file format 
+    #res = re.findall('photo_object_[0-9A-Z]*_([0-9]{8}_[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{6})_',fn)
     #res = re.findall('photo_object_([0-9]{8}_[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{6})_',fn)
     #res = re.findall('(_[0-9]{2}_[0-9]{2}_[0-9]{2})', fn)
     if len(res)==0:
-        return None
+        return None #SC: is it not good to just return None?
     else:
-        return res[0][1:]
-
+        #return res[0][1:]
+        return res[0] #SC: I changed to this
+    
 def getdatetimelist(path):
     """
     Returns a list of all unique datetimes in path
@@ -139,11 +143,11 @@ def getorderedcamids(path):
     return [cam_id for cam_id in cam_ids if guesscamtype(path,cam_id)=='greyscale']+[cam_id for cam_id in cam_ids if guesscamtype(path,cam_id)=='colour']
 
 def getimgfilename(cam,internalcam,number):
-    path = pathtoimgs[cam]
+    path = pathtoimgs[cam]  #SC: pathtoimgs is global? is it good this way
     dts = getdatetimelist(path)    
     if number>=len(dts): return None
     
-    try:
+    try: #SC camera_ids is global variable
         fn = getfnfordatetimeandcamid(pathtoimgs[cam],camera_ids[cam][internalcam],dts[number])
     except IndexError:
         return None
@@ -162,8 +166,10 @@ def converttodt(st):
 
 camera_ids = []
 for pti in pathtoimgs:
-    camera_ids.append(getorderedcamids(pti))
-    
+    camera_ids.append(getorderedcamids(pti)) #camera_ids is list of list
+print('camera_ids')
+print(camera_ids)
+print('end')
 from datetime import datetime
 import numpy as np
 import re
@@ -228,12 +234,12 @@ def detect(cam,number):
     pickle.dump(result,open(cachefile,'wb'))
     return result
     
-@app.route('/')
+@app.route('/')  #SC: this seems to be a placeholder and not shown
 def hello_world():
     return 'root node of bee label API.'
 
-#@app.route('/')
-#def home_page(): 
+#@app.route('/') #SC: I have tried to use this along with the webrowser.open with local host, but does not work
+#def home_page():
 #    return render_template('index.html')
 
 @app.route('/filename/<int:cam>/<int:internalcam>/<int:number>')
@@ -241,8 +247,8 @@ def filename(cam,internalcam,number):
     fn = getimgfilename(cam,internalcam,number)
     photoitem = np.load(fn,allow_pickle=True) 
     returnst = fn
-    print(photoitem['record'])
-    if 'estimated_true_triggertimestring' in photoitem['record']:
+    print(photoitem['record']) #SC:what if record is none? the first photo is like that, photo_object_02G14695547_20230629_10_06_07.051416
+    if 'estimated_true_triggertimestring' in photoitem['record']: #SC: what if no such 'estimated_true_triggertimestring'
         returnst = returnst + ' (' + photoitem['record']['estimated_true_triggertimestring'] + ')'
     return jsonify(returnst)
 
@@ -454,4 +460,5 @@ def getimage(cam,internalcam,number,x1,y1,x2,y2):
 #SC: If you have the debugger disabled or trust the users on your network, you can make the server publicly available simply by adding --host=0.0.0.0 to the command line:This tells your operating system to listen on all public IPs.
 if __name__ == "__main__":
     app.run(host="0.0.0.0",port=port, debug=True)
+    #print(app.url_map)
 
