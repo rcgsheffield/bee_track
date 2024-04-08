@@ -93,7 +93,7 @@ def getfnfordatetimeandcamid(path,camid,datetime):
 
 
 def getdatetimefromfilename(fn):
-    res = re.findall('photo_object_[0-9A-Z]*_([0-9]{8}_[0-9]{2}_[0-9]{2}_[0-9]{2})',fn)
+    res = re.findall('photo_object_[0-9A-Z]*_([0-9]{8}_[0-9]{2}[:|_][0-9]{2}[:|_][0-9]{2})',fn)
     #SC I changed to the above to match Mike's file format 
     #res = re.findall('photo_object_[0-9A-Z]*_([0-9]{8}_[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{6})_',fn)
     #res = re.findall('photo_object_([0-9]{8}_[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{6})_',fn)
@@ -173,11 +173,11 @@ print('end')
 from datetime import datetime
 import numpy as np
 import re
-@app.route('/getindexoftime/<int:cam>/<string:dtstring>')
+@app.route('/getindexoftime/<int:cam>/<string:dtstring>') #SC: The button 'GO TO'
 def getindexoftime(cam:int ,dtstring):
     fns = getimgfilelist(pathtoimgs[cam])
     targ = converttodt(dtstring) #'20210720_13:58:00.000000')
-    gotoNum = np.argmin(np.abs([(converttodt(re.findall('.*_([0-9]{8}_[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{6})__',fn)[0])-targ).total_seconds() for fn in fns]))
+    gotoNum = np.argmin(np.abs([(converttodt(re.findall('.*_([0-9]{8}_[0-9]{2}[:|_][0-9]{2}[:|_][0-9]{2}.[0-9]{6})__',fn)[0])-targ).total_seconds() for fn in fns]))
     
     #targ = converttodt(dtstring) #'13:58:00.000000')
     #gotoNum = np.argmin(np.abs([(converttodt(re.findall('.*_([0-9]{2}:[0-9]{2}:[0-9]{2})',fn)[0])-targ).total_seconds() for fn in fns]))
@@ -242,9 +242,10 @@ def hello_world():
 #def home_page():
 #    return render_template('index.html')
 
-@app.route('/filename/<int:cam>/<int:internalcam>/<int:number>')
+@app.route('/filename/<int:cam>/<int:internalcam>/<int:number>') #SC: This route seems to be first called when app starts running with all input as zero
 def filename(cam,internalcam,number):
-    fn = getimgfilename(cam,internalcam,number)
+    fn = getimgfilename(cam,internalcam,number) #SC: there are quite a few times that there will be None
+    print(fn)
     photoitem = np.load(fn,allow_pickle=True) 
     returnst = fn
     print(photoitem['record']) #SC:what if record is none? the first photo is like that, photo_object_02G14695547_20230629_10_06_07.051416
@@ -333,7 +334,7 @@ def deleteallpos(cam,internalcam,number):
     return "done"    
     
 def load_data(cam,internalcam,number):
-    beetrackfn = pathtoimgsdir + "/bee_track.json"
+    beetrackfn = pathtoimgsdir + "/bee_track.json" #SC: we have no json file
     try:
         data = json.load(open(beetrackfn,'r'))
     except FileNotFoundError:
