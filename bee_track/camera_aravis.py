@@ -1,6 +1,5 @@
 """
-Aravis Camera interface
-https://github.com/SintefManufacturing/python-aravis/blob/master/aravis.py
+This module contains the Aravis Camera class.
 """
 
 import logging
@@ -9,6 +8,7 @@ import os
 
 import numpy as np
 # TODO what's this gi.repository?
+# PyGObject https://gnome.pages.gitlab.gnome.org/pygobject/
 from gi.repository import Aravis
 
 from bee_track.camera import Camera
@@ -18,7 +18,9 @@ logger = logging.getLogger(__name__)
 
 class AravisCamera(Camera):
     """
-    TODO
+    Aravis Camera interface
+
+    https://lazka.github.io/pgi-docs/Aravis-0.8/
     """
 
     @classmethod
@@ -31,7 +33,7 @@ class AravisCamera(Camera):
         Aravis.update_device_list()
 
     @classmethod
-    def count_devices(cls) -> int:
+    def get_n_devices(cls) -> int:
         """
         Retrieves the number of currently online devices.
         """
@@ -44,12 +46,12 @@ class AravisCamera(Camera):
         return n_cams
 
     @classmethod
-    def get_camera_ids(cls) -> list[str]:
+    def get_device_ids(cls) -> list[str]:
         """
         Get camera identifiers
         """
         ids = list()
-        for i in range(cls.count_devices()):
+        for i in range(cls.get_n_devices()):
             # https://lazka.github.io/pgi-docs/Aravis-0.8/functions.html#Aravis.get_device_id
             dev_id: str = Aravis.get_device_id(i)
             logger.info("Found camera: %s" % dev_id)
@@ -60,6 +62,7 @@ class AravisCamera(Camera):
         print("PROCESS ID: ", os.getpid())
         os.system("sudo chrt -f -p 1 %d" % os.getpid())
         Aravis.enable_interface("Fake")
+        # https://lazka.github.io/pgi-docs/Aravis-0.8/classes/Camera.html
         self.aravis_camera = Aravis.Camera.new(self.cam_id)
         self.width = int(2048)
         self.height = int(1536)

@@ -123,7 +123,11 @@ Each thread has a worker process with a configuration message queue.
 
 ## Camera capture process
 
-Photos are captured in "sets" which are ???
+### Camera exposure trigger
+
+The `Trigger` class waits for the instruction to activate the exposure pin.
+
+Photos are captured in "sets" which are synchronised with the flash sequence.
 
 1. Click "Start" on the GUI.
 2. API activates `Trigger.run`  event
@@ -133,9 +137,13 @@ Photos are captured in "sets" which are ???
 6. Record a photo capture in the exposure log.
 7. Increment the trigger index (photo exposure counter).
 8. Trigger camera exposure (activate GPIO pin)
-9. Wait for the exposure/trigger time (30 microseconds)
-10. Camera does something?
+9. The camera captured data based on the GPIO pin activation.
+10. Wait for the exposure/trigger time (30 microseconds)
 11. Deactivate the trigger pins for the camera and flashes.
+
+### Camera data retrieval
+
+The `Camera` class gets photos from the camera's data buffer.
 
 ## User interface
 

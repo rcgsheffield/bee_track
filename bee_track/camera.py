@@ -2,12 +2,15 @@ import datetime
 import multiprocessing
 import pickle
 import threading
+import logging
 
 # https://github.com/SheffieldMLtracking/QueueBuffer
 from QueueBuffer import QueueBuffer
 import numpy as np
 
 from configurable import Configurable
+
+logger = logging.getLogger(__name__)
 
 
 class CameraException(Exception):
@@ -90,40 +93,41 @@ class Camera(Configurable):
         """
         raise NotImplementedError
 
-    def get_photo(self, getraw: bool = False):
-        """Blocking, returns a photo numpy array"""
+    def get_photo(self, get_raw: bool = False) -> np.ndarray:
+        """
+        Retrieve image data from the camera.
+
+        This is a synchronous (blocking) function.
+
+        :returns: Photo data (numpy array)
+        """
         raise NotImplementedError
 
     def worker(self):
         """
-        Get image data from the camera???
+        Get image data from the camera.
         """
-        print("Camera worker started")
+        logger.info("Camera worker started")
         self.setup_camera()
 
-        # Start threads for the camera trigger and configuration
-        t = threading.Thread(target=self.camera_trigger)
-        t.start()
-        t = threading.Thread(target=self.camera_config_worker)
-        t.start()
+        # Start threads to listen for camera trigger and configuration messages
+        threading.Thread(target=self.camera_trigger).start()
+        threading.Thread(target=self.camera_config_worker).start()
 
-        print("Camera setup complete")
+        logger.info("Camera setup complete")
+
+        # ???
         last_photo_object = None
 
-        # Indefinite loop
+        # Indefinite loop: transfer image data from the camera
         while True:
-            # print("waiting for photo")
-
-            if self.debug:
-                print('Blocking started for getting photo at %s' % (
-                    datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
-            photo = self.get_photo(getraw=self.fastqueue.value)
-            print(".", end="", flush=True)
-            if self.debug:
-                print('Got photo at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
+            logger.debug('Blocking started for getting photo at %s' % (
+                datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
+            photo = self.get_photo(get_raw=self.fastqueue.value)
+            logger.debug('Got photo at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
 
             if photo is None:
-                print("Photo failed")
+                logger.info("Photo failed")
 
             rec = None
             for r in self.record:
@@ -131,31 +135,32 @@ class Camera(Configurable):
                     rec = r
                     break
             if rec is None:
-                print("WARNING: Failed to find associated photo record")
+                logger.info("WARNING: Failed to find associated photo record")
 
             photo_object = {'index': self.index.value, 'record': rec}
 
             if bool(self.return_full_colour.value):
-                if self.debug: print(
+                logger.debug(
                     'generating greyscale copy at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
                 colorphoto = photo
                 if photo is not None:
+                    # ???
                     if self.fastqueue.value:
                         # photo = downscale(np.mean(photo,2),10)
                         photo = np.mean(photo[::10, ::10, :], 2)
                     else:
                         photo = np.mean(photo, 2)
 
-                    if self.debug: print(
+                    logger.debug(
                         'averaging completed at       %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
                     photo = photo.astype(np.ubyte)
-                    if self.debug: print(
+                    logger.debug(
                         'type conversion completed at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
                     if not self.fastqueue.value: colorphoto = colorphoto.astype(np.ubyte)
-                    if self.debug: print(
+                    logger.debug(
                         'colour type conv completed at%s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
                 photo_object['colorimg'] = colorphoto
-                if self.debug: print(
+                logger.debug(
                     'greyscale copy completed at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
             else:
                 if photo is not None:

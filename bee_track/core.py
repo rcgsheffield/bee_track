@@ -266,7 +266,7 @@ def startup():
     multiprocessing.Process(target=trigger.worker).start()
 
     # Initialise cameras: get list of Aravis cameras
-    cam_ids = AravisCamera.get_camera_ids()
+    cam_ids = AravisCamera.get_device_ids()
     if not cam_ids:
         raise bee_track.camera.NoCamerasFoundError
 
