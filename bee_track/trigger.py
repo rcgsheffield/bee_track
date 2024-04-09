@@ -147,10 +147,10 @@ class Trigger(Configurable):
 
     def trigger_camera(self, fire_flash: bool, end_of_set: bool):
         """
-        Send trigger to camera (and flash, optionally.)
+        Send trigger to camera (and flash, optionally) to take a photograph exposure.
 
-        fire_flash = boolean: true=fire flash
-        end_of_set = boolean: whether this is the last photo of a set (this will then tell the tracking system to look for the bee).
+        @param fire_flash: Whether to activate the flashes
+        @param end_of_set: whether this is the last photo of a set (tells the tracking system to look for the bee)
         """
         logger.debug("Photo:    Flash" if fire_flash else "Photo: No Flash")
 
