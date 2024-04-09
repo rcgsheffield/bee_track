@@ -15,6 +15,7 @@ import queue
 from glob import glob
 from datetime import datetime as dt
 from typing import Optional
+import threading
 
 import psutil
 import flask
@@ -80,7 +81,8 @@ def setdatetime(timestring):
 
 def addtoconfigvals(component, field, value):
     try:
-        configvals = pickle.load(open('configvals.pkl', 'rb'))
+        with open('configvals.pkl', 'rb') as file:
+            configvals = pickle.load(file)
         if component not in configvals: configvals[component] = {}
         # if field not in configvals[component]:
         configvals[component][field] = value
@@ -115,12 +117,16 @@ def setfromconfigvals():
     Set app config values based on saved values.
     """
     try:
+        # Load configuration file
         with open('configvals.pkl', 'rb') as file:
             configvals = pickle.load(file)
             app.logger.info("Loaded %s", file.name)
+
+        # Set options for the components
         for component, fields in configvals.items():
             for field, value in fields.items():
                 set(component, field, value)
+    # TODO don't ignore all errors
     except:  # FileNotFoundError:
         pass
 
@@ -145,8 +151,11 @@ def getdiskfree():
 
 @app.route('/getbattery')
 def getbattery():
+    """
+    Log battery info to file
+    """
     batstr = read_batteries()
-    # Log battery info to file
+    # Append to text file
     with open("battery_status.txt", "a") as battery:
         battery.write(batstr)
     return batstr
@@ -257,10 +266,11 @@ def startup():
     multiprocessing.Process(target=trigger.worker).start()
 
     # Initialise cameras: get list of Aravis cameras
-    cam_ids = AravisCamera.get_camera_ids()
+    cam_ids = AravisCamera.get_device_ids()
     if not cam_ids:
         raise bee_track.camera.NoCamerasFoundError
-    # Iterate over available cameras ands tart a process for each one
+
+    # Iterate over available cameras and start a process for each one
     for cam_id in cam_ids:
         app.logger.info("Camera %s", cam_id)
         camera = AravisCamera(message_queue, trigger.record, cam_trigger, cam_id=cam_id)
@@ -297,19 +307,17 @@ def start():
     """
     Start camera data capture.
     """
-    # TODO what is the index?
-    nextindex = max([camera.index.value for camera in cameras] + [trigger.index.value])
+    # Find the highest value of the index for any camera or the trigger
+    next_index = max([camera.index.value for camera in cameras] + [trigger.index.value])
 
-    # reset indicies
+    # Set all camera indices and the trigger index to that value
     for camera in cameras:
-        camera.index.value = nextindex
-    trigger.index.value = nextindex
+        camera.index.value = next_index
+    trigger.index.value = next_index
 
-    # for camera in cameras:
-    #    app.logger.info(camera.index.value)
-    # app.logger.info(trigger.index.value)
-
+    # Enable the trigger event
     trigger.run.set()
+
     return "Collection Started"
 
 
@@ -318,6 +326,7 @@ def stop():
     """
     Stop camera data capture
     """
+    # Disable the trigger event
     trigger.run.clear()
     return "Collection Stopped"
 
@@ -396,26 +405,19 @@ def zip():
     return "Zipping Started"
 
 
-from threading import Thread
-from time import sleep
-
-
 def threaded_function():
-    while (True):
+    # TODO this should probably be a separate service, not part of the web app
+    while True:
         app.logger.info("running auto zip")
         # zip() #disabled
-        sleep(600)
+        raise NotImplementedError
+        time.sleep(600)
 
 
-thread = Thread(target=threaded_function)
+# TODO what's this for ???
+thread = threading.Thread(target=threaded_function)
 thread.start()
 
-
-# import threading
-# ticker = threading.Event()
-# while not ticker.wait(600):
-#    app.logger.info("AUTO ZIP")
-#    zip()
 
 @app.route('/update')
 def update():
@@ -454,10 +456,13 @@ def lowresmaximg(img, blocksize=10):
 
 @app.route('/getimagecount')
 def getimagecount():
+    """
+    Get the total number of images.
+    """
     try:
-        return str(cameras[0].index.value - 1)  # gets index of current image...
-        # return str(cameras[0].photo_queue.len())
-    except Empty:
+        # Get  index of current image
+        return str(cameras[0].index.value - 1)
+    except IndexError:
         return "No items"
 
 
@@ -467,7 +472,7 @@ def getimagewithindex(photo_queue, idx):
         if item is None: continue
         if item['index'] == idx:
             return item
-    return None
+    return
 
 
 @app.route('/getimage/<int:number>/<int:camera_id>')
@@ -496,7 +501,7 @@ def getimage(number, camera_id=0):
             track['y'] = int(track['y'])
             newtracklist.append(track)
     else:
-        newtracklist = []
+        newtracklist = list()
     return jsonify(
         {'index': photoitem['index'], 'photo': img.tolist(), 'record': photoitem['record'], 'track': newtracklist})
 
@@ -567,6 +572,7 @@ def getimagecentre(number: int, camera_id: int = 0):
 
 def main():
     startup()
+    # Listen on all incoming addresses
     app.run(host="0.0.0.0")
 
 

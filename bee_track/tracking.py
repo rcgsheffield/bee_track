@@ -93,7 +93,7 @@ class TagAnalysisFromImage(TagAnalysis):
 
 class Tracking(Configurable):
     """
-    TODO
+    Takes images from the greyscale camera's image queue (cam.photo_queue) and looks for the retro-reflector tag.
     """
 
     def __init__(self, message_queue, photo_queue):

@@ -2,12 +2,15 @@ import datetime
 import multiprocessing
 import pickle
 import threading
+import logging
 
-# TODO what's this?
+# https://github.com/SheffieldMLtracking/QueueBuffer
 from QueueBuffer import QueueBuffer
 import numpy as np
 
 from configurable import Configurable
+
+logger = logging.getLogger(__name__)
 
 
 class CameraException(Exception):
@@ -45,6 +48,9 @@ def downscalecolour(img, blocksize):
 
 
 class Camera(Configurable):
+    """
+    A worker to reads in image data from a camera.
+    """
 
     def __init__(self, message_queue, record, cam_trigger, cam_id=None):
         """
@@ -55,6 +61,7 @@ class Camera(Configurable):
         self.record = record
         self.label = multiprocessing.Array('c', 100)
         self.index = multiprocessing.Value('i', 0)
+        'Incrementing identifier number per capture (i.e. image count)'
         self.savephotos = multiprocessing.Value('b', True)
         self.fastqueue = multiprocessing.Value('b', False)  ###THIS WILL STOP PROCESSING
         self.test = multiprocessing.Value('b', False)
@@ -86,34 +93,41 @@ class Camera(Configurable):
         """
         raise NotImplementedError
 
-    # def trigger(self):
-    #    print("Triggering Camera")
-    #    self.cam_trigger.set()
+    def get_photo(self, get_raw: bool = False) -> np.ndarray:
+        """
+        Retrieve image data from the camera.
 
-    def get_photo(self, getraw: bool = False):
-        """Blocking, returns a photo numpy array"""
+        This is a synchronous (blocking) function.
+
+        :returns: Photo data (numpy array)
+        """
         raise NotImplementedError
 
     def worker(self):
-        print("Camera worker started")
+        """
+        Get image data from the camera.
+        """
+        logger.info("Camera worker started")
         self.setup_camera()
-        t = threading.Thread(target=self.camera_trigger)
-        t.start()
-        t = threading.Thread(target=self.camera_config_worker)
-        t.start()
-        print("Camera setup complete")
-        last_photo_object = None
-        while True:
-            # print("waiting for photo")
 
-            if self.debug: print(
-                'Blocking started for getting photo at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
-            photo = self.get_photo(getraw=self.fastqueue.value)
-            print(".", end="", flush=True)
-            if self.debug: print('Got photo at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
+        # Start threads to listen for camera trigger and configuration messages
+        threading.Thread(target=self.camera_trigger).start()
+        threading.Thread(target=self.camera_config_worker).start()
+
+        logger.info("Camera setup complete")
+
+        # ???
+        last_photo_object = None
+
+        # Indefinite loop: transfer image data from the camera
+        while True:
+            logger.debug('Blocking started for getting photo at %s' % (
+                datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
+            photo = self.get_photo(get_raw=self.fastqueue.value)
+            logger.debug('Got photo at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
 
             if photo is None:
-                print("Photo failed")
+                logger.info("Photo failed")
 
             rec = None
             for r in self.record:
@@ -121,31 +135,32 @@ class Camera(Configurable):
                     rec = r
                     break
             if rec is None:
-                print("WARNING: Failed to find associated photo record")
+                logger.info("WARNING: Failed to find associated photo record")
 
             photo_object = {'index': self.index.value, 'record': rec}
 
             if bool(self.return_full_colour.value):
-                if self.debug: print(
+                logger.debug(
                     'generating greyscale copy at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
                 colorphoto = photo
                 if photo is not None:
+                    # ???
                     if self.fastqueue.value:
                         # photo = downscale(np.mean(photo,2),10)
                         photo = np.mean(photo[::10, ::10, :], 2)
                     else:
                         photo = np.mean(photo, 2)
 
-                    if self.debug: print(
+                    logger.debug(
                         'averaging completed at       %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
                     photo = photo.astype(np.ubyte)
-                    if self.debug: print(
+                    logger.debug(
                         'type conversion completed at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
                     if not self.fastqueue.value: colorphoto = colorphoto.astype(np.ubyte)
-                    if self.debug: print(
+                    logger.debug(
                         'colour type conv completed at%s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
                 photo_object['colorimg'] = colorphoto
-                if self.debug: print(
+                logger.debug(
                     'greyscale copy completed at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
             else:
                 if photo is not None:
@@ -191,12 +206,14 @@ class Camera(Configurable):
                         camidstr, triggertime_string, self.label.value.decode('utf-8'), self.index.value)
                     photo_object['filename'] = filename
                     self.message_queue.put("Saved Photo: %s" % filename)
-                    if self.debug: print(
-                        'starting save at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
-                    pickle.dump(photo_object, open(filename, 'wb'))
-                    if self.debug: print(
-                        'finished save at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
-                    if self.info: print("Saved photo as %s" % filename)
+                    if self.debug:
+                        print('starting save at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
+                    with open(filename, 'wb') as file:
+                        pickle.dump(photo_object, file)
+                    if self.debug:
+                        print('finished save at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
+                    if self.info:
+                        print("Saved photo as %s" % filename)
                 else:
                     filename = 'photo_object_%s_%s.np' % (
                         camidstr, datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f"))
@@ -206,7 +223,7 @@ class Camera(Configurable):
                     self.message_queue.put("Saved Photo: %s" % filename)
                     # np.save(open('photo_%04i.np' % self.index.value,'wb'),photo.astype(np.ubyte))
             print("Incrementing camera index, from %d" % self.index.value)
-            self.index.value = self.index.value + 1
+            self.index.value += 1
 
     def close(self):
         """
