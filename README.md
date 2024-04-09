@@ -114,8 +114,8 @@ frontend <--"HTTP 5000"--> backend
 
 The Flask application has four main components, which are workers that run in separate threads:
 
+- Trigger: handles triggering the camera and flashes using GPIO pins.
 - Cameras: reads in image data from a camera.
-- Trigger: handles triggering the GPIO pins, etc.
 - Rotation: sends a rotation signal to a stepper motor via GPIO pins.
 - Tracking: takes images from the greyscale camera's image queue (`cam.photo_queue`) and looks for the tag
 
@@ -134,7 +134,8 @@ Photos are captured in "sets" which are ???
 7. Increment the trigger index (photo exposure counter).
 8. Trigger camera exposure (activate GPIO pin)
 9. Wait for the exposure/trigger time (30 microseconds)
-10. Deactivate the trigger pins for the camera and flashes.
+10. Camera does something?
+11. Deactivate the trigger pins for the camera and flashes.
 
 ## User interface
 

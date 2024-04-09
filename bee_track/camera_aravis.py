@@ -43,15 +43,13 @@ class AravisCamera(Camera):
 
         return n_cams
 
-    @staticmethod
-    def get_camera_ids() -> list[str]:
+    @classmethod
+    def get_camera_ids(cls) -> list[str]:
         """
         Get camera identifiers
         """
-        # TODO convert to generator? (how long does get_device_id take to run?)
-
         ids = list()
-        for i in range(n_cams):
+        for i in range(cls.count_devices()):
             # https://lazka.github.io/pgi-docs/Aravis-0.8/functions.html#Aravis.get_device_id
             dev_id: str = Aravis.get_device_id(i)
             logger.info("Found camera: %s" % dev_id)
@@ -192,39 +190,51 @@ class AravisCamera(Camera):
         print("Ready")
 
     def camera_config_worker(self):
+        """
+        Listen for new settings/options in the camera configuration queue and set them on the device.
+        """
         while True:
+            # Wait for a new configuration option to arrive
             config = self.config_camera_queue.get()
-            print("Got:")
-            print(config)
-            if config[0] == 'exposure':
-                self.aravis_camera.set_exposure_time(config[1])
-            if config[0] == 'delay':
-                aravis_device = self.aravis_camera.get_device()
-                aravis_device.set_integer_feature_value("StrobeLineDelay", config[1])
-            if config[0] == 'predelay':
-                aravis_device = self.aravis_camera.get_device()
-                aravis_device.set_integer_feature_value("StrobeLinePreDelay", config[1])
+            print("Got:", config)
+            key = config[0]
+            value = config[1]
+            match key:
+                case 'exposure':
+                    self.aravis_camera.set_exposure_time(value)
+                case 'delay':
+                    aravis_device = self.aravis_camera.get_device()
+                    aravis_device.set_integer_feature_value("StrobeLineDelay", value)
+                case 'predelay':
+                    aravis_device = self.aravis_camera.get_device()
+                    aravis_device.set_integer_feature_value("StrobeLinePreDelay", value)
+                case _:
+                    raise ValueError(config)
 
     def camera_trigger(self):
+        """
+        Software camera trigger
+        """
+
         while True:
-            if self.debug: print("WAITING FOR TRIGGER")
+            if self.debug:
+                print("WAITING FOR TRIGGER")
+            # Wait for software trigger
             self.cam_trigger.wait()
-            if self.debug: print("Software Trigger...")
+            if self.debug:
+                print("Software Trigger...")
             self.aravis_camera.software_trigger()
             self.cam_trigger.clear()
 
-    def get_photo(self, getraw=False):
-        if self.debug: print(self.cam_id, self.stream.get_n_buffers())
-        if self.debug: print(self.cam_id, "waiting for photo...")
+    def get_photo(self, get_raw: bool = False):
+        if self.debug:
+            print(self.cam_id, self.stream.get_n_buffers())
+            print(self.cam_id, "waiting for photo...")
         buffer = self.stream.pop_buffer()
 
-        # buffer = None
-        # while buffer is None:
-        #    print("...")
-        #    time.sleep(np.random.rand()*1) #wait between 0 and 1 second
-        #    buffer = self.stream.timeout_pop_buffer(1000) #blocking for 1ms
+        if self.debug:
+            print(self.cam_id, "got buffer...")
 
-        if self.debug: print(self.cam_id, "got buffer...")
         if buffer is None:
             self.message_queue.put(self.cam_id + " Buffer read failed")
             print(self.cam_id, "buffer read failed")
@@ -240,17 +250,20 @@ class AravisCamera(Camera):
             return None
         print("Stream statistics")
         print(self.stream.get_statistics())
-        if self.debug: print(self.cam_id, "buffer ok")
-        if getraw:
-            raw = np.frombuffer(buffer.get_data(), dtype=np.uint8)  # no type conversion!
-        else:
-            raw = np.frombuffer(buffer.get_data(), dtype=np.uint8).astype(float)
+        if self.debug:
+            print(self.cam_id, "buffer ok")
+
+        # Get image data
+        raw = np.frombuffer(buffer.get_data(), dtype=np.uint8)
+        if not get_raw:
+            raw = raw.astype(float)
         self.stream.push_buffer(buffer)
         if bool(self.return_full_colour.value):
             print(">>>")
-            return np.reshape(raw, [self.height, self.width, 3])
+            new_shape = [self.height, self.width, 3]
         else:
-            return np.reshape(raw, [self.height, self.width])
+            new_shape = [self.height, self.width]
+        return np.reshape(raw, new_shape)
 
     def close(self):
         """

@@ -90,23 +90,27 @@ class Camera(Configurable):
         """
         raise NotImplementedError
 
-    # def trigger(self):
-    #    print("Triggering Camera")
-    #    self.cam_trigger.set()
-
     def get_photo(self, getraw: bool = False):
         """Blocking, returns a photo numpy array"""
         raise NotImplementedError
 
     def worker(self):
+        """
+        Get image data from the camera???
+        """
         print("Camera worker started")
         self.setup_camera()
+
+        # Start threads for the camera trigger and configuration
         t = threading.Thread(target=self.camera_trigger)
         t.start()
         t = threading.Thread(target=self.camera_config_worker)
         t.start()
+
         print("Camera setup complete")
         last_photo_object = None
+
+        # Indefinite loop
         while True:
             # print("waiting for photo")
 
@@ -115,7 +119,8 @@ class Camera(Configurable):
                     datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
             photo = self.get_photo(getraw=self.fastqueue.value)
             print(".", end="", flush=True)
-            if self.debug: print('Got photo at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
+            if self.debug:
+                print('Got photo at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
 
             if photo is None:
                 print("Photo failed")

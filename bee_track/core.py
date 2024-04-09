@@ -269,7 +269,8 @@ def startup():
     cam_ids = AravisCamera.get_camera_ids()
     if not cam_ids:
         raise bee_track.camera.NoCamerasFoundError
-    # Iterate over available cameras ands tart a process for each one
+
+    # Iterate over available cameras and start a process for each one
     for cam_id in cam_ids:
         app.logger.info("Camera %s", cam_id)
         camera = AravisCamera(message_queue, trigger.record, cam_trigger, cam_id=cam_id)

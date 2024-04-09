@@ -35,10 +35,11 @@ class Trigger(Configurable):
     https://sourceforge.net/p/raspberry-gpio-python/wiki/BasicUsage/
     """
 
-    def __init__(self, message_queue, cam_trigger, t=2.0):
+    def __init__(self, message_queue, cam_trigger: multiprocessing.Event, t: float = 2.0):
         super().__init__(message_queue)
         print("Initialising Trigger Control")
         self.cam_trigger = cam_trigger
+        "Camera exposure event"
         self.manager = multiprocessing.Manager()
         self.flashselection: list = self.manager.list()
         self.index = multiprocessing.Value('i', 0)
@@ -183,6 +184,7 @@ class Trigger(Configurable):
         self.index.value += 1
 
         # Software trigger...
+        # This communicates to the software camera interface
         # self.cam_trigger.set()
 
         # Trigger via pin...
