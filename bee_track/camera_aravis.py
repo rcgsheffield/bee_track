@@ -1,13 +1,11 @@
+"""
+Aravis Camera interface
+https://github.com/SintefManufacturing/python-aravis/blob/master/aravis.py
+"""
+
 import logging
-import sys
-import time
-import pickle
-import ctypes
-import threading
 import gc
 import os
-from datetime import datetime as dt
-from multiprocessing import Queue
 
 import numpy as np
 # TODO what's this gi.repository?

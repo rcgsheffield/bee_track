@@ -81,7 +81,8 @@ def setdatetime(timestring):
 
 def addtoconfigvals(component, field, value):
     try:
-        configvals = pickle.load(open('configvals.pkl', 'rb'))
+        with open('configvals.pkl', 'rb') as file:
+            configvals = pickle.load(file)
         if component not in configvals: configvals[component] = {}
         # if field not in configvals[component]:
         configvals[component][field] = value
@@ -116,12 +117,16 @@ def setfromconfigvals():
     Set app config values based on saved values.
     """
     try:
+        # Load configuration file
         with open('configvals.pkl', 'rb') as file:
             configvals = pickle.load(file)
             app.logger.info("Loaded %s", file.name)
+
+        # Set options for the components
         for component, fields in configvals.items():
             for field, value in fields.items():
                 set(component, field, value)
+    # TODO don't ignore all errors
     except:  # FileNotFoundError:
         pass
 
