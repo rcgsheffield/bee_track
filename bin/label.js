@@ -15,7 +15,13 @@ function convertJSONtoImageURL(data,drawcrosshairs) {
     var imgData=ctx.getImageData(0,0,width,height);
     var imdata=imgData.data;
 
+    //Image processing
+    //Calculates the average intensity of all pixels in the image.
+    //Gets the scaling factor based on a user input or a default value.
+    //Iterates through all pixels and scales their intensity based on the calculated factor.
+    //Sets the alpha channel (transparency) of each pixel to 255 (fully opaque).
     // manipulate some pixel elements
+
     row = 0; //height-1;
     col = 0;
     
@@ -30,7 +36,7 @@ function convertJSONtoImageURL(data,drawcrosshairs) {
     var avg = sum/count;
     var maxval = avg*2;
 
-    maxval = $('input#scaletext').val();
+    maxval = $('input#scaletext').val(); //SC: but maxval already defined above?
     //$('span#scaletext').text(maxval.toFixed(2))
     scale = 255/maxval
 

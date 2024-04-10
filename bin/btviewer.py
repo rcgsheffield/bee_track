@@ -372,7 +372,7 @@ def deleteallpos(cam, internalcam, number):
 
 
 def load_data(cam, internalcam, number):
-    beetrackfn = pathtoimgsdir + "/bee_track.json"  # SC: we have no json file
+    beetrackfn = os.path.join(pathtoimgsdir, 'bee_track.json')  # SC: we have no json file #so always None
     try:
         data = json.load(open(beetrackfn, 'r'))
     except FileNotFoundError:
@@ -389,7 +389,7 @@ def load_data(cam, internalcam, number):
     return data[camst][numberst]
 
 
-@app.route('/loadpos/<int:cam>/<int:internalcam>/<int:number>')
+@app.route('/loadpos/<int:cam>/<int:internalcam>/<int:number>') #SC: This call will always be empty given we don't have the beetrack json file as mentioned above
 def loadpos(cam, internalcam, number):
     d = load_data(cam, internalcam, number)
     return json.dumps(d)
@@ -503,5 +503,4 @@ def getimage(cam, internalcam, number, x1, y1, x2, y2):
 if __name__ == "__main__":
     #app.run(host="0.0.0.0", port=port, debug=True)
     app.run(host="0.0.0.0", port=port)
-
     # print(app.url_map)
