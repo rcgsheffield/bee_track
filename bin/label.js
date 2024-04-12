@@ -1,3 +1,4 @@
+
 function convertJSONtoImageURL(data, drawcrosshairs) {
   if (data === null) { alert("Failed"); }
   img = data['photo']
