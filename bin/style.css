@@ -5,7 +5,8 @@
     width:1024px;
     height:768px;
     background-size: 1024px 768px;
-    background-image:url("nodata.png");
+    /*background-image:url("nodata.png"); SC: I delete this because it is caught as error*/
+
 }
 
 #image2 {

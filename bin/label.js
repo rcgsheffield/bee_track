@@ -12,7 +12,7 @@ function convertJSONtoImageURL(data,drawcrosshairs) {
     canvas.height=height;
 
     // get the imageData and pixel array from the canvas
-    var imgData=ctx.getImageData(0,0,width,height);
+    var imgData=ctx.getImageData(0,0,width,height); //SC:https://www.w3schools.com/tags/canvas_getimagedata.asp
     var imdata=imgData.data;
 
     //Image processing
@@ -36,13 +36,13 @@ function convertJSONtoImageURL(data,drawcrosshairs) {
     var avg = sum/count;
     var maxval = avg*2;
 
-    maxval = $('input#scaletext').val(); //SC: but maxval already defined above?
+    maxval = $('input#scaletext').val(); //SC: but maxval already defined above? which one we would like? user input?
     //$('span#scaletext').text(maxval.toFixed(2))
     scale = 255/maxval
 
-    for(var i=0;i<imdata.length;i+=4){
+    for(var i=0;i<imdata.length;i+=4){ //SC: Why skipping 4? function:applies a scaling factor, and sets the alpha channel to fully opaque.
         c = img[row][col]*scale;
-        if (c>255) {c=255;}
+        if (c>255) {c=255;} //SC: This checks if the calculated value c is greater than the maximum color value (255 in most image formats). If it is, it's clamped to 255 to prevent overflow.
         imdata[i]=c;
         imdata[i+1] = c;
         imdata[i+2] = c;
@@ -172,7 +172,7 @@ refreshimages();})
 
 
 
-$(document).keypress(function(e) {
+$(document).keypress(function(e) { //for the short cut key
   if(e.which == 110) {$('button#next').trigger('click');}
   if(e.which == 78) {$('button#next10').trigger('click');}  
   if(e.which == 108) {$('button#last').trigger('click');}    
@@ -318,14 +318,14 @@ function drawscaleddiagcrosshair(imdata,width,height,x,y,size,r,g,b) {
 
 
 
-$('button.refreshimages').click(function(){refreshimages();});
+$('button.refreshimages').click(function(){refreshimages();}); //SC: I could not find this button
 //$('#image2').mousemove(function( event ) {
 //  var msg = "Handler for .mousemove() called at ";
 //  msg += event.pageX + ", " + event.pageY;
 //  $( "#log" ).append( "<div>" + msg + "</div>" );
 //});
 
-shifted = false
+shifted = false  //SC: for shortcut key
 controlpressed = false
 $(document).on('keyup keydown', function(e){shifted = e.shiftKey} );
 $(document).on('keyup keydown', function(e){controlpressed = e.ctrlKey} );
@@ -440,7 +440,7 @@ function drawDots() {
 }
 
 $('input#maxval').bind('input',function() {refreshimages();});
-function refreshimages(){
+function refreshimages(){ //SC:Where does the image come from ?
     cam_images[cam]=image;
     $('input#imagenum').val(image);
     url = "http://127.0.0.1:"+$('input#port').val()+"/filename/"+cam+'/'+internalcam+'/'+image;

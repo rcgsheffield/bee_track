@@ -19,7 +19,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 # Compress(app) SC: a mechanism for integrating applications. CORS defines a way for client web applications that are loaded in one domain to interact with resources in a different domain.
 CORS(app)
-
+#cors = CORS(app, resources={r"*": {"origins": "*"}})#SC: I added this
 
 parser = argparse.ArgumentParser(
     prog='btviewer', description='Provide simple interface to label bee images')
@@ -56,7 +56,7 @@ print(scriptpath)
 # indexhtml = os.path.join(scriptpath, 'index.html')
 # webbrowser.open("file://index.html",new=2)
 # SC https://docs.python.org/3.11/library/webbrowser.html#webbrowser.new
-webbrowser.open("file://" + os.path.realpath('index.html'), new=2)
+webbrowser.open("file://" + os.path.realpath('index.html'), new=2) #SC: so the index html used is the one not in the
 # webbrowser.open("http://localhost:5000") SC: if we use this one with the index route, the page is shown in white background but no response
 # SC: it loads 2 times when debug = True
 
@@ -266,8 +266,8 @@ def detect(cam, number):
 def hello_world():
     return 'root node of bee label API.'
 
-# @app.route('/') #SC: I have tried to use this along with the webrowser.open with local host, but does not work
-# def home_page():
+#@app.route('/') #SC: I have tried to use this along with the webrowser.open with local host, but does not work
+#def home_page():
 #    return render_template('index.html')
 
 
@@ -282,6 +282,9 @@ def filename(cam, internalcam, number):
     # SC:what if record is none? the first photo is like that, photo_object_02G14695547_20230629_10_06_07.051416
     print(photoitem['record'])
     # SC: what if no such 'estimated_true_triggertimestring'
+    # Error message:     if 'estimated_true_triggertimestring' in photoitem['record']:
+    #        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    # TypeError: argument of type 'NoneType' is not iterable
     if 'estimated_true_triggertimestring' in photoitem['record']:
         returnst = returnst + \
             ' (' + photoitem['record']['estimated_true_triggertimestring'] + ')'
@@ -501,6 +504,5 @@ def getimage(cam, internalcam, number, x1, y1, x2, y2):
 
 # SC: If you have the debugger disabled or trust the users on your network, you can make the server publicly available simply by adding --host=0.0.0.0 to the command line:This tells your operating system to listen on all public IPs.
 if __name__ == "__main__":
-    #app.run(host="0.0.0.0", port=port, debug=True)
-    app.run(host="0.0.0.0", port=port)
-    # print(app.url_map)
+    app.run(host="0.0.0.0", port=port, debug=True) #SC:Debug mode should NOT be used for production, because it impedes the performance, and worse still, lets users execute codes on the server.
+    #app.run(host="0.0.0.0", port=port)
