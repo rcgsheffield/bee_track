@@ -56,7 +56,7 @@ print(scriptpath)
 # indexhtml = os.path.join(scriptpath, 'index.html')
 # webbrowser.open("file://index.html",new=2)
 # SC https://docs.python.org/3.11/library/webbrowser.html#webbrowser.new
-webbrowser.open("file://" + os.path.realpath('index.html'), new=2) #SC: so the index html used is the one not in the
+# webbrowser.open("file://" + os.path.realpath('index.html'), new=2) #SC: so the index html used is the one not in the
 # webbrowser.open("http://localhost:5000") SC: if we use this one with the index route, the page is shown in white background but no response
 # SC: it loads 2 times when debug = True
 
@@ -262,13 +262,13 @@ def detect(cam, number):
     return result
 
 
-@app.route('/')  # SC: this seems to be a placeholder and not shown
-def hello_world():
-    return 'root node of bee label API.'
+#@app.route('/')  # SC: this seems to be a placeholder and not shown
+#def hello_world():
+#    return 'root node of bee label API.'
 
-#@app.route('/') #SC: I have tried to use this along with the webrowser.open with local host, but does not work
-#def home_page():
-#    return render_template('index.html')
+@app.route('/') #SC: I have tried to use this along with the webrowser.open with local host, but does not work
+def home_page():
+    return render_template('index.html')
 
 
 # SC: This route seems to be first called when app starts running with all input as zero
@@ -504,5 +504,6 @@ def getimage(cam, internalcam, number, x1, y1, x2, y2):
 
 # SC: If you have the debugger disabled or trust the users on your network, you can make the server publicly available simply by adding --host=0.0.0.0 to the command line:This tells your operating system to listen on all public IPs.
 if __name__ == "__main__":
+    webbrowser.open_new("http://localhost:5000")
     app.run(host="0.0.0.0", port=port, debug=True) #SC:Debug mode should NOT be used for production, because it impedes the performance, and worse still, lets users execute codes on the server.
     #app.run(host="0.0.0.0", port=port)
