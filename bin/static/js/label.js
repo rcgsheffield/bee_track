@@ -1,3 +1,6 @@
+let currentimage = null //user var or let to first time declare the variable, assignment no need
+let positions = null;
+
 function convertJSONtoImageURL(data, drawcrosshairs) {
   if (data === null) {
     alert("Failed");
@@ -195,13 +198,13 @@ $("button#detectrange").click(function () {
   $.getJSON(url, function (data) {});
 });
 
-cam_images = [0, 0, 0, 0, 0, 0];
-image = 0;
-x1 = 0;
-x2 = 2048;
-y1 = 0;
-y2 = 1536;
-boxsize = 300;
+let cam_images = [0, 0, 0, 0, 0, 0]; // if no change , then use const with capitalised
+let image = 0;
+let x1 = 0;
+let x2 = 2048;
+let y1 = 0;
+let y2 = 1536;
+let boxsize = 300;
 
 $("button#next").click(function () {
   image = image + 1;
@@ -309,7 +312,7 @@ $(document).keypress(function (e) {
   //alert(e.which);
 });
 
-internalcam = 0;
+let internalcam = 0;
 $("input:radio#internal0").click(function () {
   internalcam = 0;
   image = cam_images[cam];
@@ -323,7 +326,7 @@ $("input:radio#internal1").click(function () {
   refreshimages();
 });
 
-cam = 0;
+let cam = 0;
 $("input:radio#0").click(function () {
   cam = 0;
   image = cam_images[cam];
@@ -428,8 +431,8 @@ $("button.refreshimages").click(function () {
 //  $( "#log" ).append( "<div>" + msg + "</div>" );
 //});
 
-shifted = false; //SC: for shortcut key
-controlpressed = false;
+let shifted = false; //SC: for shortcut key
+let controlpressed = false;
 $(document).on("keyup keydown", function (e) {
   shifted = e.shiftKey;
 });
@@ -538,14 +541,15 @@ $("#image2").click(function (e) {
   }
   refreshimages();
 });
-currentimage = null; //problems is here?
-positions = null;
+//currentimage = null; //problems is here?
+//positions = null;
 
 function drawDots() {
   context.clearRect(0, 0, canvasWidth, canvasHeight); //gemini: This line clears any previous drawings on a canvas element using the 2D rendering context
   context.beginPath(); //gemini: This prepares the context for a new path, likely to avoid connecting previous shapes with the upcoming ones
-
-  scale = currentimage["photo"].length / 768; //gemini: This line calculates a scaling factor
+  console.log('drawDots ' + currentimage)
+  scale = (currentimage?.["photo"]?.length / 768) || 1;
+  //scale = currentimage["photo"].length / 768; //gemini: This line calculates a scaling factor #
   //console.log(currentimage['photo'][Math.round(dot.y*scale)][Math.round(dot.x*scale)]);//[dot.x,dot.y]);
   brightestv = 0;
   brightloc = null;
@@ -621,8 +625,8 @@ $("input#scaletext").bind("input", function () {
   refreshimages();
 }); //sc: changed maxval to scaletext as maxval is not the id
 function refreshimages() {
-  //SC:Where does the image come from ?
   cam_images[cam] = image;
+  console.log('refreshimages'+ image)
   $("input#imagenum").val(image);
   url =
     "http://127.0.0.1:" +
@@ -635,8 +639,8 @@ function refreshimages() {
     image;
   $.getJSON(url, function (data) {
     $("span#filename").text(data);
+    console.log('data' + data)
   });
-
   url =
     "http://127.0.0.1:" +
     $("input#port").val() +
@@ -654,15 +658,27 @@ function refreshimages() {
     Math.round(x2) +
     "/" +
     Math.round(y2);
-  setTimeout(
-    () =>
-      $.getJSON(url, function (data) {
-        $("#image").css("background-image", convertJSONtoImageURL(data, true));
-        currentimage = data;
-      }),
-    1000
-  );
+    console.log('refreshimages2ndURL '+ url)
+
+  //setTimeout( SC: I replace this timeout to the normal so that it works
+  //  () =>
+  //    $.getJSON(url, function (data) {
+  //      $("#image").css("background-image", convertJSONtoImageURL(data, true));
+  //      console.log('data for currentimage', data)
+  //      currentimage = data;
+  //    }),
+  //  1000
+  //);
   // await sleep(200);
+
+  $.getJSON(url, function (data) {
+    $("#image").css("background-image", convertJSONtoImageURL(data, true));
+    console.log('data for currentimage', data);
+    currentimage = data;
+    console.log('currentimage', currentimage);
+
+  });
+
   url =
     "http://127.0.0.1:" +
     $("input#port").val() +
@@ -681,7 +697,7 @@ function refreshimages() {
   //
 }
 
-tracking_data = {};
+let tracking_data = {};
 function refreshtracking() {
   if (document.getElementById("track").checked) {
     url =
@@ -701,9 +717,11 @@ function refreshtracking() {
       })(image)
     );
   }
+  console.log('refreshtracking')
+  console.log(image)
 }
-refreshtracking();
-refreshimages();
+//refreshtracking();
+//refreshimages();
 
 var dot = { x: 50, y: 50, radius: 25 };
 $("canvas#image2").mousemove(function (event) {
@@ -742,6 +760,7 @@ var currentFrame = 0;
 
 // Set and create our dot.
 chosenloc = [0, 0];
+
 
 setTimeout(refreshimages, 100);
 setTimeout(drawDots, 200);

@@ -34,6 +34,7 @@ parser.add_argument('--config', required=False, type=str,
 args = parser.parse_args()
 print(args)
 
+
 # '/home/mike/Documents/Research/bee/photos2020/photos_June20'
 pathtoimgsdir = args.imgpath
 print("Absolute path to images:")
@@ -276,18 +277,23 @@ def home_page():
 def filename(cam, internalcam, number):
     # SC: there are quite a few times that there will be None
     fn = getimgfilename(cam, internalcam, number)
-    print(fn)
     photoitem = np.load(fn, allow_pickle=True)
     returnst = fn
     # SC:what if record is none? the first photo is like that, photo_object_02G14695547_20230629_10_06_07.051416
+    print('photoitem')
     print(photoitem['record'])
+
     # SC: what if no such 'estimated_true_triggertimestring'
     # Error message:     if 'estimated_true_triggertimestring' in photoitem['record']:
     #        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     # TypeError: argument of type 'NoneType' is not iterable
-    if 'estimated_true_triggertimestring' in photoitem['record']:
-        returnst = returnst + \
-            ' (' + photoitem['record']['estimated_true_triggertimestring'] + ')'
+    #if 'estimated_true_triggertimestring' in photoitem['record']:
+    #    returnst = returnst + \
+    #        ' (' + photoitem['record']['estimated_true_triggertimestring'] + ')'
+    #I changed to below for now
+    returnst = returnst + \
+            ' (' + photoitem['record']['triggertimestring'] + ')'
+    
     return jsonify(returnst)
 
 
