@@ -334,7 +334,8 @@ def savelm(cam, internalcam, x, y, lmname, coords):
 
 def save_pos(cam, internalcam, number, x, y, confidence, label=None):
     fn = getimgfilename(cam, internalcam, number)
-    beetrackfn = pathtoimgsdir+"/bee_track.json"
+    
+    beetrackfn = os.path.join(pathtoimgsdir, 'bee_track.json')
     try:
         data = json.load(open(beetrackfn, 'r'))
     except FileNotFoundError:
@@ -363,7 +364,7 @@ def savepos(cam, internalcam, number, x, y, confidence, label):
 
 @app.route('/deleteallpos/<int:cam>/<int:internalcam>/<int:number>')
 def deleteallpos(cam, internalcam, number):
-    beetrackfn = pathtoimgsdir + "/bee_track.json"
+    beetrackfn = os.path.join(pathtoimgsdir, 'bee_track.json')
     try:
         data = json.load(open(beetrackfn, 'r'))
     except FileNotFoundError:
@@ -381,7 +382,7 @@ def deleteallpos(cam, internalcam, number):
 
 
 def load_data(cam, internalcam, number):
-    beetrackfn = os.path.join(pathtoimgsdir, 'bee_track.json')  # SC: we have no json file #so always None
+    beetrackfn = os.path.join(pathtoimgsdir, 'bee_track.json')  # SC: the json file we have here contains so little, and always return [] for the 'position' in the drawDot in javascript
     try:
         data = json.load(open(beetrackfn, 'r'))
     except FileNotFoundError:

@@ -660,24 +660,14 @@ function refreshimages() {
     Math.round(y2);
     console.log('refreshimages2ndURL '+ url)
 
-  //setTimeout( SC: I replace this timeout to the normal so that it works
-  //  () =>
-  //    $.getJSON(url, function (data) {
-  //      $("#image").css("background-image", convertJSONtoImageURL(data, true));
-  //      console.log('data for currentimage', data)
-  //      currentimage = data;
-  //    }),
-  //  1000
-  //);
-  // await sleep(200);
-
   $.getJSON(url, function (data) {
     $("#image").css("background-image", convertJSONtoImageURL(data, true));
     console.log('data for currentimage', data);
     currentimage = data;
-    console.log('currentimage', currentimage);
+    console.log('currentimage in getimage', currentimage);
 
   });
+  console.log('currentimage in after getimage before loadpos', currentimage);
 
   url =
     "http://127.0.0.1:" +
@@ -691,7 +681,8 @@ function refreshimages() {
   $.getJSON(url, function (data) {
     positions = data;
     console.log(url);
-    console.log(positions);
+    console.log(positions); //SC: where does the positions come from?
+    console.log('currentimage right before drawDots in refreshimages', currentimage);
     drawDots();
   });
   //
