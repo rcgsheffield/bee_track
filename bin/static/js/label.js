@@ -1,4 +1,4 @@
-let currentimage = null //user var or let to first time declare the variable, assignment no need
+let currentimage = null; //user var or let to first time declare the variable, assignment no need
 let positions = null;
 
 function convertJSONtoImageURL(data, drawcrosshairs) {
@@ -161,7 +161,8 @@ function convertJSONtoImageURL(data, drawcrosshairs) {
   return "url('" + canvas.toDataURL() + "')";
 } // end of convertJSONtoImageURL
 
-$("input#scaletext").bind("input", function () { //on user's input
+$("input#scaletext").bind("input", function () {
+  //on user's input
   refreshimages();
 });
 $("input#imagenum").bind("input", function () {
@@ -547,8 +548,8 @@ $("#image2").click(function (e) {
 function drawDots() {
   context.clearRect(0, 0, canvasWidth, canvasHeight); //gemini: This line clears any previous drawings on a canvas element using the 2D rendering context
   context.beginPath(); //gemini: This prepares the context for a new path, likely to avoid connecting previous shapes with the upcoming ones
-  console.log('drawDots ' + currentimage)
-  scale = (currentimage?.["photo"]?.length / 768) || 1;
+  console.log("drawDots " + currentimage);
+  scale = currentimage?.["photo"]?.length / 768 || 1;
   //scale = currentimage["photo"].length / 768; //gemini: This line calculates a scaling factor #
   //console.log(currentimage['photo'][Math.round(dot.y*scale)][Math.round(dot.x*scale)]);//[dot.x,dot.y]);
   brightestv = 0;
@@ -625,10 +626,11 @@ $("input#scaletext").bind("input", function () {
   refreshimages();
 }); //sc: changed maxval to scaletext as maxval is not the id
 function refreshimages() {
+
   cam_images[cam] = image;
-  console.log('refreshimages'+ image)
   $("input#imagenum").val(image);
-  url =
+
+  url_filename =
     "http://127.0.0.1:" +
     $("input#port").val() +
     "/filename/" +
@@ -637,11 +639,8 @@ function refreshimages() {
     internalcam +
     "/" +
     image;
-  $.getJSON(url, function (data) {
-    $("span#filename").text(data);
-    console.log('data' + data)
-  });
-  url =
+
+  url_getimage =
     "http://127.0.0.1:" +
     $("input#port").val() +
     "/getimage/" +
@@ -658,18 +657,8 @@ function refreshimages() {
     Math.round(x2) +
     "/" +
     Math.round(y2);
-    console.log('refreshimages2ndURL '+ url)
 
-  $.getJSON(url, function (data) {
-    $("#image").css("background-image", convertJSONtoImageURL(data, true));
-    console.log('data for currentimage', data);
-    currentimage = data;
-    console.log('currentimage in getimage', currentimage);
-
-  });
-  console.log('currentimage in after getimage before loadpos', currentimage);
-
-  url =
+  url_loadpos =
     "http://127.0.0.1:" +
     $("input#port").val() +
     "/loadpos/" +
@@ -678,11 +667,19 @@ function refreshimages() {
     internalcam +
     "/" +
     image;
-  $.getJSON(url, function (data) {
-    positions = data;
-    console.log(url);
-    console.log(positions); //SC: where does the positions come from?
-    console.log('currentimage right before drawDots in refreshimages', currentimage);
+  
+
+  $.getJSON(url_filename, function (data) {
+    $("span#filename").text(data);
+  });
+
+  $.getJSON(url_getimage, function (data) {
+    $("#image").css("background-image", convertJSONtoImageURL(data, true));
+    currentimage = data;
+  });
+
+  $.getJSON(url_loadpos, function (data) {
+    positions = data; 
     drawDots();
   });
   //
@@ -708,8 +705,8 @@ function refreshtracking() {
       })(image)
     );
   }
-  console.log('refreshtracking')
-  console.log(image)
+  console.log("refreshtracking");
+  console.log(image);
 }
 //refreshtracking();
 //refreshimages();
@@ -751,7 +748,6 @@ var currentFrame = 0;
 
 // Set and create our dot.
 chosenloc = [0, 0];
-
 
 setTimeout(refreshimages, 100);
 setTimeout(drawDots, 200);
