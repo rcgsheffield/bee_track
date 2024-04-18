@@ -6,6 +6,7 @@ function convertJSONtoImageURL(data, drawcrosshairs) {
     alert("Failed");
   }
   img = data["photo"];
+  console.log(img);
   height = img.length;
   width = img[0].length;
 
@@ -625,11 +626,8 @@ function drawDots() {
 $("input#scaletext").bind("input", function () {
   refreshimages();
 }); //sc: changed maxval to scaletext as maxval is not the id
-function refreshimages() {
 
-  cam_images[cam] = image;
-  $("input#imagenum").val(image);
-
+async function show_filename() {
   url_filename =
     "http://127.0.0.1:" +
     $("input#port").val() +
@@ -640,6 +638,14 @@ function refreshimages() {
     "/" +
     image;
 
+  let response = await fetch(url_filename);
+  let data = await response.json();
+  $("span#filename").text(data);
+  console.log("filename", data);
+}
+
+async function show_image() {
+  //SC: to be used in refreshimages
   url_getimage =
     "http://127.0.0.1:" +
     $("input#port").val() +
@@ -658,6 +664,15 @@ function refreshimages() {
     "/" +
     Math.round(y2);
 
+  let response = await fetch(url_getimage);
+  let data = await response.json();
+  $("#image").css("background-image", convertJSONtoImageURL(data, true));
+  currentimage = data;
+  console.log("currentimage ", currentimage);
+}
+
+async function load_pos() {
+  // to be used in refreshimages
   url_loadpos =
     "http://127.0.0.1:" +
     $("input#port").val() +
@@ -667,25 +682,26 @@ function refreshimages() {
     internalcam +
     "/" +
     image;
-  
 
-  $.getJSON(url_filename, function (data) {
-    $("span#filename").text(data);
-  });
+  let response = await fetch(url_loadpos);
+  let data = await response.json();
+  console.log("data from loadpos", data);
+  positions = data;
+  console.log("positions ", positions);
+}
 
-  $.getJSON(url_getimage, function (data) {
-    $("#image").css("background-image", convertJSONtoImageURL(data, true));
-    currentimage = data;
-  });
+async function refreshimages() {
+  cam_images[cam] = image;
+  $("input#imagenum").val(image);
+  show_filename();
 
-  $.getJSON(url_loadpos, function (data) {
-    positions = data; 
-    drawDots();
-  });
-  //
+  show_image()
+    .then(() => load_pos())
+    .then(() => drawDots());
 }
 
 let tracking_data = {};
+
 function refreshtracking() {
   if (document.getElementById("track").checked) {
     url =
@@ -750,4 +766,4 @@ var currentFrame = 0;
 chosenloc = [0, 0];
 
 setTimeout(refreshimages, 100);
-setTimeout(drawDots, 200);
+//setTimeout(drawDots, 200);
