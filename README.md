@@ -28,7 +28,7 @@ Insert into PI and power on, wait until pi turns up as connected on hotspot
 
 Clone the project Repo
 
-`git clone https://github.com/SheffieldMLtracking/bee_track.git`
+`git clone -b fast_setup https://github.com/SheffieldMLtracking/bee_track.git`
 
 Run `bee_track/initsetup` for quick setup
 
