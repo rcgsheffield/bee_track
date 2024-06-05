@@ -1,6 +1,20 @@
 numpy
 flask
 RPi.GPIO
+ninja
+PyGObject
+rpimotorlib
+rpi-lgpio
+psutil
+scipy
+libsvm
+mem_top
+flask_compress
+
+bee_track @ git+https://github.com/lionfish0/bee_track.git
+retrodetect @ https://github.com/lionfish0/retrodetect.git
+QueueBuffer @ https://github.com/lionfish0/QueueBuffer.git
+
 psutil==5.*
 Flask-Cors==4.*
 Flask-Compress==1.*
