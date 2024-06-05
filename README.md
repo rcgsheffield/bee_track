@@ -30,7 +30,9 @@ Clone the project Repo
 
 `git clone https://github.com/SheffieldMLtracking/bee_track.git`
 
-Run `bee_track/initsetup` for quick setup
+FIRST RUN `bee_track/pythonsetup` for quick setup of the python virtual environment and modules
+
+THEN RUN `sudo sh bee_track/aravissetup` to setup aravis
 
 # Running Beetrack
 

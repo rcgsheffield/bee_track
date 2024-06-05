@@ -1,21 +1,4 @@
-sleep 2
-
-sudo apt install cmake
-
-git clone https://github.com/lionfish0/bee_track.git
-python -m venv bee-venv
-
-bee-venv/bin/pip install ninja
-bee-venv/bin/pip install -e bee_track/.
-bee-venv/bin/pip install PyGObject rpimotorlib rpi-lgpio psutil spidev requests
-bee-venv/bin/pip install scipy libsvm mem_top flask_compress
-bee-venv/bin/pip install -U flask-cors
-
-git clone https://github.com/lionfish0/retrodetect.git
-bee-venv/bin/pip install -e retrodetect/.
-git clone https://github.com/lionfish0/QueueBuffer.git
-bee-venv/bin/pip install -e QueueBuffer/.
-
+sudo apt install cmake libatlas3-base
 git clone https://github.com/AravisProject/aravis.git
 
 sudo apt install libgtk-3-dev libnotify-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev gstreamer1.0-plugins-bad
