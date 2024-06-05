@@ -1,4 +1,4 @@
-import multiprocessing.sharedctypes
+import multiprocessing.sharedctypes import Queue, Value
 
 
 class Configurable:

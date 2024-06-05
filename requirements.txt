@@ -1,4 +1,5 @@
 numpy
+scipy
 flask
 RPi.GPIO
 ninja
@@ -6,12 +7,11 @@ PyGObject
 rpimotorlib
 rpi-lgpio
 psutil
-scipy
 libsvm
 mem_top
 flask_compress
 
-bee_track @ git+https://github.com/lionfish0/bee_track.git
+bee_track @ git+https://github.com/SheffieldMLtracking/bee_track.git
 retrodetect @ git+https://github.com/lionfish0/retrodetect.git
 QueueBuffer @ git+https://github.com/lionfish0/QueueBuffer.git
 

@@ -9,5 +9,7 @@ meson build aravis/
 meson configure build/ -Dviewer=enabled -Dintrospection=enabled -Dgst-plugin=enabled
 
 sudo ninja install -C /home/pi/build/
+sudo ldconfig
 
 echo "Setup Complete"
+echo "Test Camera using arv-camera-test-0.10"
