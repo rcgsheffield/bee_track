@@ -9,7 +9,7 @@ This section explains how to setup a blank sd card and Pi5 as a headless Pi you 
 - Create files in boot partition (NOT root/boot):
 -- `touch ssh.txt`
 
--- `touch wpa_supplicant.conf` with the following:
+-- Create a file `wpa_supplicant.conf` with the following:
 ```
 ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
 update_config=1
