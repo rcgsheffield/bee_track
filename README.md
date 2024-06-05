@@ -30,7 +30,7 @@ Clone the project Repo
 
 `git clone -b fast_setup https://github.com/SheffieldMLtracking/bee_track.git`
 
-Run `bee_track/initsetup` for quick setup
+Run `sudo sh bee_track/initsetup` for quick setup
 
 # Running Beetrack
 
