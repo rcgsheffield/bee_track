@@ -1,12 +1,12 @@
 # bee_track
-Tracking software to run on pi
+This explains how to setup a headless pi, how to setup aravis, this project and make it so the project runs on boot with no interaction
 
 ## Pi setup and connection
 This section explains how to setup a blank sd card and Pi5 as a headless Pi you can SSH into
 
 - Flash OS using Raspbian Imager
 - Unplug and replug into PC
-- Create files in boot partition (NOT root/boot):
+- Create files in boot partition (bootf) (NOT root/boot):
 -- `touch ssh.txt`
 
 -- Create a file `wpa_supplicant.conf` with the following:
@@ -24,14 +24,9 @@ network={
 Insert into PI and power on, wait until pi turns up as connected on hotspot 
 
 - Find ip address of Pi : `ping raspberrypi.local`
-- SSH to pi : `ssh pi@IP`
+- SSH to pi: `ssh pi@IP`
 
-Clone the project Repo
--venv
--source aravaissetup from root
--pip install requirements
--run projects
-
+## Project setup
 First create a virtual python environment where all python and pip commands must be run
 
 `python -m venv bee-venv`
@@ -44,9 +39,10 @@ Next we clone this repo
 
 `git clone -b fast_setup https://github.com/SheffieldMLtracking/bee_track.git`
 
-First run `aravissetup` from the root directory, entering "y" when prompted
+First run `aravissetup` from the root directory
 
 `source bee_track/aravissetup`
+, entering "y" when prompted
 
 This should install any dependencies needed for aravis, clone aravis, setup, build and install it ready to be used.
 
@@ -54,8 +50,16 @@ THEN install pip dependencies in the venv
 
 `pip install -r bee_track/requirements.txt`
 
+Currently, this fork of the project doesn't work, seems to be a problem with circular dependencies...
+To get it to work do the following:
 
-# Running Beetrack
+`rm -rf bee_track`
+`git clone https://github.com/lionfish0/bee_track.git`
+This should create a new folder called bee track.
+
+You then need to replace all occurrences of python3 to /home/pi/bee-venv/bin/python3 in bee_track/startup and bee_track/startupfast to get the project to run on the virtual environment we have created. I can't change this in the original repo, and this fork doesn't work so this is the current work-around.
+
+# Running Beetrack from command line
 
 Make sure you are in venvironment where all the installs have occured
 
