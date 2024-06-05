@@ -1,94 +1,157 @@
 # bee_track
 Tracking software to run on pi
 
-# Getting the pi set up
+# Steps to setup RP with Aravis and get it working oh yeah
 
-To make it possible to ssh into, use:
+## Pi setup and connection
+This section explains how to setup a blank sd card and Pi5 as a headless Pi you can SSH into
 
-"For headless setup, SSH can be enabled by placing a file named ssh, without any extension, onto the boot partition of the SD card from another computer." -- https://www.raspberrypi.org/documentation/remote-access/ssh/
+- Flash OS using Raspbian Imager
+- Unplug and replug into PC
+- Create files in boot partition (NOT root/boot):
+-- `touc ssh.txt`
 
-
-Edit `/etc/wpa_supplicant/wpa_supplicant.conf`, enter:
-
-    ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-    update_config=1
-    
-    network={
-        ssid="SSID"
-        psk="PASSWORD"
-    }
-    
-    network={
-        ssid="SSID"
-        psk="PASSWORD"
-    }
-
-# Installation
-
-Download the aravis library:
-
-    git clone https://github.com/AravisProject/aravis.git
-
-Or donwload earlier version from
-http://ftp.gnome.org/pub/GNOME/sources/aravis/0.6/
-
-then if you need the viewer (although I did find I had to split these installs).
-
-    sudo apt install libgtk-3-dev libnotify-dev libgstreamer1.0 libgstreamer-plugins-base1.0-dev gstreamer1.0-plugins-bad
-
-other stuff...
-
-    sudo apt-get install gnome-common intltool valac libglib2.0-dev gobject-introspection libgirepository1.0-dev libgtk-3-dev libgnome-desktop-3-dev libcanberra-dev libgdata-dev libdbus-glib-1-dev libgstreamer1.0-dev libupower-glib-dev libxml2-dev
-
-for a while now aravis has used meson for building...
-
-    sudo pip3 install ninja meson
-    
-    cd aravis
-    meson build
-    cd build
-    meson configure -Dviewer=enabled -Dintrospection=enabled -Dgst-plugin=enabled
-    ninja
-    sudo ninja install
-    cd .. #to aravis
-    sudo ldconfig
-
-(maybe see https://github.com/sightmachine/SimpleCV/wiki/Aravis-(Basler)-GigE-Camera-Install-Guide)
-
-Download this tool
-
-```bash
-pip install git+https://github.com/lionfish0/bee_track.git
+-- `touch wpa_supplicant.conf` with the following:
 ```
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+update_config=1
+country=GB
 
-In `/etc/rc.local` add line:
-
-```bash
-su - pi -c /home/pi/bee_track/startup &
+network={
+	ssid="WiFi SSID"
+	psk="WPA/WPA2 passphrase"
+	key_mgmt=WPA-PSK
+}
 ```
+Insert into PI and power on, wait until pi turns up as connected on hotspot 
 
-Also to make numpy work:
+- Find ip address of Pi : `ping raspberrypi.local`
+- SSH to pi : `ssh pi@IP`
 
-```bash
-sudo apt install libatlas3-base
-sudo pip3 install numpy
+## Python Setup
+
+In root directory of the pi (or create project dir with all files in)
+`git clone https://github.com/lionfish0/bee_track.git`
+
+Setup virtual environment
+`python -m venv bee-venv`
+
+Activate - (if using SSH terminal to change python env)
+Make sure all commands are run in the virtual environment from now on
+`source bee-venv/bin/activate`
+
+`pip install -e bee_track/.`
+`sudo apt install libatlas3-base`
+
+
+
+## Aravis setup
+
+`git clone https://github.com/AravisProject/aravis.git`
+
+`sudo apt install cmake`
+
+and
+
+`sudo apt install libgtk-3-dev libnotify-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev gstreamer1.0-plugins-bad`
+
+and
+
+`sudo apt-get install gnome-common intltool valac libglib2.0-dev gobject-introspection libgirepository1.0-dev libgtk-3-dev libgnome-desktop-3-dev libcanberra-dev libgdata-dev libdbus-glib-1-dev libgstreamer1.0-dev libupower-glib-dev libxml2-dev`
+
+`meson setup aravis/`
+
+`cd aravis`
+
+`meson build`
+
+`cd build`
+
+`meson configure -Dviewer=enabled -Dintrospection=enabled -Dgst-plugin=enabled`
+
+`sudo ninja install` might have to `pip install ninja`
+
+
+## Beetrack setup
+
+Important installs:
+
+`pip install PyGObject rpimotorlib rpi-lgpio psutil spidev requests`
+
 ```
-
-Also:
-
-```bash
-pip3 install scipy
+pip install scipy
 git clone https://github.com/lionfish0/retrodetect.git
 cd retrodetect
-pip3 install -e .
+pip install -e .
 git clone https://github.com/lionfish0/QueueBuffer.git
 cd QueueBuffer
-pip3 install -e .
-pip3 install libsvm
-pip3 install -U flask-cors
-pip3 install mem_top
-pip3 install flask_compress
+pip install -e .
+pip install libsvm
+pip install -U flask-cors
+pip install mem_top
+pip install flask_compress
 ```
+
+
+## Running Beetrack
+
+Make sure you are in venvironment where all the installs have occured
+
+`cd bee_track`
+
+`sudo ifconfig eth0 up 169.254.160.220`
+Check cameras are working:
+`arv-camera-test-0.10`
+
+`./startupfast`
+If something goes wrong use
+`killall python3`
+
+Connect to pi with:
+
+http://raspberrypi.local:8000/
+
+## Running Beetrack on Boot automatically
+Edit rc.local
+`sudo nano /etc/rc.local`
+Add the following line:
+
+
+`su - pi -c /home/pi/bee_track/startup &`
+
+
+TODO: Change `bee_track/startup` to run on venv we have created.
+```
+
+export GI_TYPELIB_PATH=$GI_TYPELIB_PATH:/home/pi/aravis/build/src
+export LD_LIBRARY_PATH=/home/pi/aravis/build/src
+cd /home/pi/bee_track/webinterface
+/home/pi/bee-venv/bin/python3 -m http.server &
+
+sudo ifconfig eth0 up 169.254.160.220
+
+sudo sysctl -w net.core.rmem_max=67108864 net.core.rmem_default=67108864
+sudo sysctl -w net.ipv4.route.flush=1
+sudo ifconfig eth0 mtu 9000
+/home/pi/bee-venv/bin/python3 ../bee_track/core.py
+
+```
+The last line runs the application in the virtualenvironment
+
+
+Add the following to `/etc/network/interfaces`
+
+```
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet static
+address 169.254.160.220
+```
+
+Reboot and the project should run without any interaction
+
 
 # Architecture
 
