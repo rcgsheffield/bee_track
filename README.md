@@ -27,12 +27,33 @@ Insert into PI and power on, wait until pi turns up as connected on hotspot
 - SSH to pi : `ssh pi@IP`
 
 Clone the project Repo
+-venv
+-source aravaissetup from root
+-pip install requirements
+-run projects
 
-`git clone https://github.com/SheffieldMLtracking/bee_track.git`
+First create a virtual python environment where all python and pip commands must be run
 
-FIRST RUN `bee_track/pythonsetup` for quick setup of the python virtual environment and modules
+`python -m venv bee-venv`
 
-THEN RUN `sudo sh bee_track/aravissetup` to setup aravis
+Then activate the virtual environment with
+
+`source bee-venv/bin/activate`
+
+Next we clone this repo
+
+`git clone -b fast_setup https://github.com/SheffieldMLtracking/bee_track.git`
+
+First run `aravissetup` from the root directory, entering "y" when prompted
+
+`source bee_track/aravissetup`
+
+This should install any dependencies needed for aravis, clone aravis, setup, build and install it ready to be used.
+
+THEN install pip dependencies in the venv
+
+`pip install -r bee_track/requirements.txt`
+
 
 # Running Beetrack
 
