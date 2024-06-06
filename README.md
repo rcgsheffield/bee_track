@@ -46,28 +46,65 @@ First run `aravissetup` from the root directory
 
 This should install any dependencies needed for aravis, clone aravis, setup, build and install it ready to be used.
 
-THEN install pip dependencies in the venv
+THEN install python dependencies in the venv (make sure it `(bee-venv)` is on the left of the bash)
 
 `pip install -r bee_track/requirements.txt`
 
-Currently, this fork of the project doesn't work, seems to be a problem with circular dependencies...
-To get it to work do the following:
+This must be done after running aravissetup because some of the python modules rely on some of the installs when installing aravis.
+
+Also currently requirements.txt installs the original fork, not this project.
+
+Currently, this fork of the project doesn't work
+To get it to work we need to remove this repo and clone the original, from root do the following:
 
 `rm -rf bee_track`
 `git clone https://github.com/lionfish0/bee_track.git`
 This should create a new folder called bee track.
 
-You then need to replace all occurrences of python3 to /home/pi/bee-venv/bin/python3 in bee_track/startup and bee_track/startupfast to get the project to run on the virtual environment we have created. I can't change this in the original repo, and this fork doesn't work so this is the current work-around.
+You then need to replace all occurrences of `python3` to `/home/pi/bee-venv/bin/python3` in `bee_track/startup` and `bee_track/startupfast` to get the project to run on the virtual environment we have created. I can't change this in the original repo, and this fork doesn't work so this is the current work-around.
+
+For example in `bee_track/startup` originally is the following:
+
+```
+sleep 20
+export GI_TYPELIB_PATH=$GI_TYPELIB_PATH:/home/pi/aravis/build/src
+export LD_LIBRARY_PATH=/home/pi/aravis/build/src
+cd /home/pi/bee_track/webinterface
+python3 -m http.server &
+
+sudo sysctl -w net.core.rmem_max=67108864 net.core.rmem_default=67108864
+sudo sysctl -w net.ipv4.route.flush=1
+sudo ifconfig eth0 mtu 9000
+python3 ../bee_track/core.py
+
+```
+
+And you change it to:
+
+```
+sleep 20
+export GI_TYPELIB_PATH=$GI_TYPELIB_PATH:/home/pi/aravis/build/src
+export LD_LIBRARY_PATH=/home/pi/aravis/build/src
+cd /home/pi/bee_track/webinterface
+/home/pi/bee-venv/bin/python3 -m http.server &
+
+sudo sysctl -w net.core.rmem_max=67108864 net.core.rmem_default=67108864
+sudo sysctl -w net.ipv4.route.flush=1
+sudo ifconfig eth0 mtu 9000
+/home/pi/bee-venv/bin/python3 ../bee_track/core.py
+```
+Same with startupfast
 
 # Running Beetrack from command line
 
-Make sure you are in venvironment where all the installs have occured
+Make sure you are in virtual environment where all the installs have occured
 
 `source bee-venv/bin/activate`
 
 `cd bee_track`
 
 `sudo ifconfig eth0 up 169.254.160.220`
+
 Check cameras are working:
 `arv-camera-test-0.10`
 
@@ -81,11 +118,15 @@ Connect to pi with:
 http://raspberrypi.local:8000/
 
 # Running Beetrack on Boot automatically
-Edit rc.local
+To run the project on a headless pi with no interaction you must complete the following steps. Bear in mind it takes a good 3-5 miniutes to get up and running every boot.
+
+Edit rc.local by
 `sudo nano /etc/rc.local`
 Add the following line:
 
 `su - pi -c /home/pi/bee_track/startup &`
+
+Before exit 0
 
 Add the following to `/etc/network/interfaces`
 
