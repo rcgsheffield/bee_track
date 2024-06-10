@@ -180,19 +180,19 @@ class Camera(Configurable):
                 if rec is not None:
                     triggertime_string = photo_object['record']['triggertimestring']
 
-                    filename = '%s_%04i.np' % (triggertime_string,self.index.value)
+                    filename = '%s_%04i.np' % (triggertime_string.replace(":","+"),self.index.value)
                     photo_object['filename'] = filename
                     self.message_queue.put("Saved Photo: %s" % filename)
 
-                    if self.debug: print('starting save at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
+                    if self.debug: print('starting save at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H+%M+%S.%f")))
 
                     self.try_save(photo_object,filename,camidstr)
 
-                    if self.debug: print('finished save at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))                    
+                    if self.debug: print('finished save at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H+%M+%S.%f")))                    
                     if self.info: print("Saved photo as %s" % filename)
 
                 else:
-                    filename = 'photo_object_%s_%s.np' % (camidstr,datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f"))                   
+                    filename = 'photo_object_%s_%s.np' % (camidstr,datetime.datetime.now().strftime("%Y%m%d_%H+%M+%S.%f"))                   
                     self.message_queue.put("FAILED TO FIND ASSOCIATED RECORD! SAVED AS %s")
                     photo_object['filename'] = filename
 
