@@ -29,7 +29,7 @@ Insert into PI and power on, wait until pi turns up as connected on hotspot
 ## Project setup
 First create a virtual python environment where all python and pip commands must be run
 
-`python -m venv bee-venv`
+`python3 -m venv bee-venv`
 
 Then activate the virtual environment with
 
@@ -37,7 +37,7 @@ Then activate the virtual environment with
 
 Next we clone this repo
 
-`git clone -b fast_setup https://github.com/SheffieldMLtracking/bee_track.git`
+`git clone https://github.com/SheffieldMLtracking/bee_track.git`
 
 First run `aravissetup` from the root directory
 
@@ -51,49 +51,6 @@ THEN install python dependencies in the venv (make sure it `(bee-venv)` is on th
 `pip install -r bee_track/requirements.txt`
 
 This must be done after running aravissetup because some of the python modules rely on some of the installs when installing aravis.
-
-Also currently requirements.txt installs the original fork, not this project.
-
-Currently, this fork of the project doesn't work
-To get it to work we need to remove this repo and clone the original, from root do the following:
-
-`rm -rf bee_track`
-`git clone https://github.com/lionfish0/bee_track.git`
-This should create a new folder called bee track.
-
-You then need to replace all occurrences of `python3` to `/home/pi/bee-venv/bin/python3` in `bee_track/startup` and `bee_track/startupfast` to get the project to run on the virtual environment we have created. I can't change this in the original repo, and this fork doesn't work so this is the current work-around.
-
-For example in `bee_track/startup` originally is the following:
-
-```
-sleep 20
-export GI_TYPELIB_PATH=$GI_TYPELIB_PATH:/home/pi/aravis/build/src
-export LD_LIBRARY_PATH=/home/pi/aravis/build/src
-cd /home/pi/bee_track/webinterface
-python3 -m http.server &
-
-sudo sysctl -w net.core.rmem_max=67108864 net.core.rmem_default=67108864
-sudo sysctl -w net.ipv4.route.flush=1
-sudo ifconfig eth0 mtu 9000
-python3 ../bee_track/core.py
-
-```
-
-And you change it to:
-
-```
-sleep 20
-export GI_TYPELIB_PATH=$GI_TYPELIB_PATH:/home/pi/aravis/build/src
-export LD_LIBRARY_PATH=/home/pi/aravis/build/src
-cd /home/pi/bee_track/webinterface
-/home/pi/bee-venv/bin/python3 -m http.server &
-
-sudo sysctl -w net.core.rmem_max=67108864 net.core.rmem_default=67108864
-sudo sysctl -w net.ipv4.route.flush=1
-sudo ifconfig eth0 mtu 9000
-/home/pi/bee-venv/bin/python3 ../bee_track/core.py
-```
-Same with startupfast
 
 # Running Beetrack from command line
 
