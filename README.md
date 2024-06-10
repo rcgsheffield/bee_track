@@ -37,7 +37,7 @@ Then activate the virtual environment with
 
 Next we clone this repo
 
-`git clone -b fast_setup https://github.com/SheffieldMLtracking/bee_track.git`
+`git clone https://github.com/SheffieldMLtracking/bee_track.git`
 
 First run `aravissetup` from the root directory
 
