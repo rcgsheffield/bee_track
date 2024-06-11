@@ -205,8 +205,18 @@ class Camera(Configurable):
             self.index.value = self.index.value + 1
 
     def try_save(self, photo_object, filename, camid):
-
-        [session_name, set_name] = self.label.value.decode('utf-8').split(',') 
+        try:
+            labelstring = self.label.value.decode('utf-8')
+            [session_name, set_name] = labelstring.split(',') 
+        except ValueError:
+            #probably no comma included in string.
+            session_name = 'unnamed_session'
+            if len(labelstring)>0:
+                set_name = labelstring
+            else:
+                set_name = 'unnamed_set'
+        print(session_name, set_name)
+        
         parents = "/home/pi/beephotos/%s/%s/%s/%s/%s/" % (datetime.date.today(),session_name,set_name,self.devid.value,camid)
         path = parents + filename
 
