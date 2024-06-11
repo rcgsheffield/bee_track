@@ -194,8 +194,12 @@ class Aravis_Camera(Camera):
             self.cam_trigger.clear()
 
     def get_photo(self,getraw=False):
-        if self.debug: print(self.cam_id,self.stream.get_n_buffers())
-        if self.debug: print(self.cam_id,"waiting for photo...")
+        """
+        Returns tuple of
+        - a numpy array of the 'raw' image (either unsigned 8-bit - if getraw True, otherwise a float).
+        - the timestamp
+        """
+        print("ARAVIS")
         buffer = self.stream.pop_buffer()
         
         #buffer = None
@@ -209,7 +213,7 @@ class Aravis_Camera(Camera):
             self.message_queue.put(self.cam_id+" Buffer read failed")
             print(self.cam_id,"buffer read failed")
             gc.collect()            
-            return None
+            return None,None
         status = buffer.get_status()
         if status!=0:
             print(self.cam_id,"Status Error")
@@ -217,20 +221,21 @@ class Aravis_Camera(Camera):
             self.message_queue.put(self.cam_id+" Buffer Error: "+str(status))            
             self.stream.push_buffer(buffer) #return it to the buffer
             gc.collect()
-            return None
+            return None,None
         print("Stream statistics")
         print(self.stream.get_statistics())
         if self.debug: print(self.cam_id,"buffer ok")
         if getraw:
             raw = np.frombuffer(buffer.get_data(),dtype=np.uint8)#no type conversion!
         else:
-            raw = np.frombuffer(buffer.get_data(),dtype=np.uint8).astype(float)        
+            raw = np.frombuffer(buffer.get_data(),dtype=np.uint8).astype(float)
+        timestamp = buffer.get_timestamp()
+        
         self.stream.push_buffer(buffer)
         if bool(self.return_full_colour.value):
-            print(">>>")
-            return np.reshape(raw,[self.height,self.width,3])
+            return np.reshape(raw,[self.height,self.width,3]),timestamp
         else:
-            return np.reshape(raw,[self.height,self.width])
+            return np.reshape(raw,[self.height,self.width]),timestamp
         
     def close(self):
         """
