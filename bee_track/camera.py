@@ -6,6 +6,7 @@ import threading
 import multiprocessing
 import pickle
 import datetime
+import os
 
 def ascii_draw(mat):
     symbols = np.array([s for s in ' .,:-=+*X#@@'])#[::-1]
@@ -53,6 +54,16 @@ class Camera(Configurable):
         self.config_camera_queue = Queue()
         self.info = False
         self.debug = False
+
+        #Gets device id (copied from core.py)
+        try:
+            print("Trying to get our ID")
+            devid = open('device_id.txt','r').read()
+        except FileNotFoundError:
+            print("Failed to find ID")
+            devid = '9999'
+
+        self.devid = Value('i',int(devid))
 
     def config_camera(self, param, value):
         """Implement for specific cameras
@@ -148,37 +159,64 @@ class Camera(Configurable):
             
             
             if self.debug: print('starting to push photo to queue at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
+
             if self.fastqueue.value: #note we don't even pass on a colour image!
                 #lowres_photo_object = {item:photo_object[item] for item in ['index','record']} #just copy across minimal key items
                 lowres_photo_object = {item:photo_object[item] for item in ['index','record','img']} #just copy across minimal key items
                 #lowres_img = downscale(photo_object['img'],10)
                 #lowres_photo_object['img'] = lowres_img
                 self.photo_queue.put(lowres_photo_object)
+
             else:
                 self.photo_queue.put(photo_object)
+
             if self.cam_id is not None:
                 camidstr = self.cam_id[-11:]
+
             else:
                 camidstr = ''
+
             if self.savephotos.value:
                 if rec is not None:
                     triggertime_string = photo_object['record']['triggertimestring']
-                    filename = 'photo_object_%s_%s_%s_%04i.np' % (camidstr,triggertime_string,self.label.value.decode('utf-8'),self.index.value)
+
+                    filename = '%s_%04i.np' % (triggertime_string.replace(":","+"),self.index.value)
                     photo_object['filename'] = filename
                     self.message_queue.put("Saved Photo: %s" % filename)
-                    if self.debug: print('starting save at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
-                    pickle.dump(photo_object,open(filename,'wb'))
-                    if self.debug: print('finished save at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))                    
+
+                    if self.debug: print('starting save at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H+%M+%S.%f")))
+
+                    self.try_save(photo_object,filename,camidstr)
+
+                    if self.debug: print('finished save at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H+%M+%S.%f")))                    
                     if self.info: print("Saved photo as %s" % filename)
+
                 else:
-                    filename = 'photo_object_%s_%s.np' % (camidstr,datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f"))                   
+                    filename = 'photo_object_%s_%s.np' % (camidstr,datetime.datetime.now().strftime("%Y%m%d_%H+%M+%S.%f"))                   
                     self.message_queue.put("FAILED TO FIND ASSOCIATED RECORD! SAVED AS %s")
                     photo_object['filename'] = filename
-                    pickle.dump(photo_object,open(filename,'wb'))
+
+                    self.try_save(photo_object,filename,camidstr)
+
                     self.message_queue.put("Saved Photo: %s" % filename)                  
+
                 #np.save(open('photo_%04i.np' % self.index.value,'wb'),photo.astype(np.ubyte))   
             print("Incrementing camera index, from %d" % self.index.value)             
             self.index.value = self.index.value + 1
+
+    def try_save(self, photo_object, filename, camid):
+
+        [session_name, set_name] = self.label.value.decode('utf-8').split(',') 
+        parents = "/home/pi/beephotos/%s/%s/%s/%s/%s/" % (datetime.date.today(),session_name,set_name,self.devid.value,camid)
+        path = parents + filename
+
+        try:
+            pickle.dump(photo_object, open(path,'wb'))
+        except FileNotFoundError:
+            print("Parent Directory not found")
+            os.makedirs(parents)
+            pickle.dump(photo_object, open(path,'wb'))
+
                 
     def close(self):
         """

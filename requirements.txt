@@ -9,7 +9,8 @@ rpi-lgpio
 libsvm
 mem_top
 
-bee_track @ git+https://github.com/SheffieldMLtracking/bee_track.git
+bee_track @ git+https://github.com/SheffieldMLtracking/bee_track.git 
+
 retrodetect @ git+https://github.com/lionfish0/retrodetect.git
 QueueBuffer @ git+https://github.com/lionfish0/QueueBuffer.git
 

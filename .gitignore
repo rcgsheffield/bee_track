@@ -133,3 +133,6 @@ dmypy.json
 
 # Raspberry Pi OS images
 *.img
+
+#numpy images
+*.np

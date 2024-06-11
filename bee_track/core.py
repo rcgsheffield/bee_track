@@ -265,7 +265,8 @@ def rotatetoangle(targetangle):
     return "Rotation Started"
 
 @app.route('/setlabel/<string:label>')
-def setlabel(label):
+def setlabel(label : str):
+    #Label set as setname,sessionname
     for camera in cameras:
         camera.label.value = bytes(label[1:],'utf-8')
     return "Set to %s" % label[1:]

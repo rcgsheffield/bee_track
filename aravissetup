@@ -16,4 +16,3 @@ sudo ldconfig
 
 echo "Setup Complete"
 echo "Test Camera using arv-camera-test-0.10"
-
