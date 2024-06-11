@@ -74,6 +74,16 @@ Connect to pi with:
 
 http://raspberrypi.local:8000/
 
+## If you want to make edits
+
+You will probably want to reinstall with git an editable version
+
+```
+(bee-venv)$ pip uninstall bee_track
+(bee-venv)$ cd ~/bee_track
+(bee-venv)$ pip install -e .
+```
+
 # Running Beetrack on Boot automatically
 To run the project on a headless pi with no interaction you must complete the following steps. Bear in mind it takes a good 3-5 miniutes to get up and running every boot.
 
