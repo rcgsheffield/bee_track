@@ -4,7 +4,6 @@ from bee_track.rotate import Rotate
 from bee_track.camera_aravis import Aravis_Camera as Camera
 from bee_track.camera_aravis import getcameraids
 from bee_track.tracking import Tracking
-from bee_track.file_manager import File_Manager
 from multiprocessing import Process, Queue
 import numpy as np
 import io
@@ -184,13 +183,10 @@ def startup():
     global tracking
     global cam_trigger
     global rotate
-    global file_manager
     
     if trigger is not None:
         return "startup already complete"
     message_queue = Queue()
-    
-    file_manager = File_Manager(message_queue)
     
     cam_trigger = multiprocessing.Event()
 
@@ -207,7 +203,9 @@ def startup():
         t.start()
         import time
         time.sleep(1)
-    assert len(cameras)>0
+    if len(cameras)==0:
+        return "Failed: No cameras found"
+        
     #we'll make the tracking camera the first greyscale one if there is one, otherwise the 0th one.
     usecam=cameras[0]
     print("looking for camera to use for tracking...")
@@ -253,10 +251,6 @@ def stop():
     trigger.run.clear()
     return "Collection Stopped"
 
-@app.route('/compress') ##TODO ADDED ZIP AND COMPRESS!!
-def compress():
-    file_manager.compress_photos()
-    return "In progress"
 
 @app.route('/rotatetoangle/<float:targetangle>')
 def rotatetoangle(targetangle):
@@ -298,7 +292,7 @@ def runcommandnowait(cmnd):
     
 
     
-@app.route('/zip') ##TODO ADDED ZIP AND COMPRESS!!
+@app.route('/zip')
 def zip():
     import datetime
     now = datetime.datetime.now()
@@ -314,24 +308,6 @@ def zip():
     runcommandnowait('zip -mT zips/%s *.np' % filename)
     print("Started")
     return "Zipping Started"
-
-from threading import Thread
-from time import sleep
-
-def threaded_function():
-    while (True):
-        print("running auto zip")
-        #zip() #disabled
-        sleep(600)
-
-thread = Thread(target = threaded_function)
-thread.start()
-
-#import threading
-#ticker = threading.Event()
-#while not ticker.wait(600):
-#    print("AUTO ZIP")
-#    zip()
 
 @app.route('/update')
 def update():
