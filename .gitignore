@@ -136,3 +136,8 @@ dmypy.json
 
 #numpy images
 *.np
+
+#Config and status files
+webinterface/battery_status.txt
+webinterface/configvals.pkl
+webinterface/device_id.txt
