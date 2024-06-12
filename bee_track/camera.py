@@ -8,15 +8,6 @@ import pickle
 import datetime
 import os
 
-def ascii_draw(mat):
-    symbols = np.array([s for s in ' .,:-=+*X#@@'])#[::-1]
-    msg = ""
-    mat = (11*mat/(np.max(mat)+1)).astype(int)
-    mat[mat<0] = 0
-    for i in range(0,len(mat),2):
-        msg+=''.join(symbols[mat][i])+"\n"
-    return msg
-
 def downscale(img,blocksize):
     k = int(img.shape[0] / blocksize)
     l = int(img.shape[1] / blocksize)    
@@ -80,18 +71,20 @@ class Camera(Configurable):
         """implement whatever triggers the camera
         e.g. self.cam_trigger.wait()
         """
-        pass
-        
-    #def trigger(self):
-    #    print("Triggering Camera")
-    #    self.cam_trigger.set()
+        pass        
         
     def get_photo(self,getraw=False):
-        """Blocking, returns a photo numpy array"""
+        """Blocking
+        
+            Returns tuple of
+            - a numpy array of the 'raw' image (either unsigned 8-bit - if getraw True, otherwise a float).
+            - the timestamp
+        """
+        print("NOT IMPLEMENTED")
         pass
         
     def worker(self):
-        print("Camera worker started")
+        print("Camera worker started.")
         self.setup_camera()
         t = threading.Thread(target=self.camera_trigger)
         t.start()
@@ -100,12 +93,8 @@ class Camera(Configurable):
         print("Camera setup complete")
         last_photo_object = None
         while True:
-            #print("waiting for photo")
-            
-            if self.debug: print('Blocking started for getting photo at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
-            photo = self.get_photo(getraw=self.fastqueue.value)
+            photo,timestamp = self.get_photo(getraw=self.fastqueue.value)
             print(".",end="",flush=True)
-            if self.debug: print('Got photo at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
 
             if photo is None:
                 print("Photo failed")
@@ -119,56 +108,18 @@ class Camera(Configurable):
                 print("WARNING: Failed to find associated photo record")
             
             
-            photo_object = {'index':self.index.value,'record':rec}
+            photo_object = {'index':self.index.value,'record':rec,'camera_timestamp':timestamp}
             
-            if bool(self.return_full_colour.value):
-                if self.debug: print('generating greyscale copy at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
-                colorphoto = photo
-                if photo is not None:
-                    if self.fastqueue.value:         
-                        #photo = downscale(np.mean(photo,2),10)
-                        photo = np.mean(photo[::10,::10,:],2)
-                    else:
-                        photo = np.mean(photo,2)
-                    
-                    if self.debug: print('averaging completed at       %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
-                    photo = photo.astype(np.ubyte)
-                    if self.debug: print('type conversion completed at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
-                    if not self.fastqueue.value: colorphoto = colorphoto.astype(np.ubyte)
-                    if self.debug: print('colour type conv completed at%s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
-                photo_object['colorimg'] = colorphoto
-                if self.debug: print('greyscale copy completed at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))                
-            else:
-                if photo is not None:
-                    photo = photo.astype(np.ubyte)
+    
+
+            if photo is not None:
+                photo = photo.astype(np.ubyte)
             photo_object['img'] = photo
             
-            if self.test.value:
-                if (photo_object['img'] is not None) and (photo_object['record'] is not None):
-                    print("Test Signal Added")                
-                    photo_object['img'] = photo_object['img'] + np.random.randint(0,2,photo_object['img'].shape)
-                    if photo_object['record']['flash']:
-                        photo_object['img'] = photo_object['img'] + np.random.randint(0,2,photo_object['img'].shape)
-                        
-                        y,x = np.unravel_index((photo_object['img']+np.random.randn(photo_object['img'].shape[0],photo_object['img'].shape[1]))[100:-100,100:-100].argmin(), photo_object['img'][100:-100,100:-100].shape)
-                        #print(y,x)
-                        photo_object['img'][y+100,x+100] = 255 #put it at minimum!
-                    #photo_object['img'][100+np.random.randint(photo_object['img'].shape[0]-200),100+np.random.randint(photo_object['img'].shape['img']-200)]=255 #bright spot!
-            
             last_photo_object = photo_object
-            
-            
-            if self.debug: print('starting to push photo to queue at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S.%f")))
 
-            if self.fastqueue.value: #note we don't even pass on a colour image!
-                #lowres_photo_object = {item:photo_object[item] for item in ['index','record']} #just copy across minimal key items
-                lowres_photo_object = {item:photo_object[item] for item in ['index','record','img']} #just copy across minimal key items
-                #lowres_img = downscale(photo_object['img'],10)
-                #lowres_photo_object['img'] = lowres_img
-                self.photo_queue.put(lowres_photo_object)
 
-            else:
-                self.photo_queue.put(photo_object)
+            self.photo_queue.put(photo_object)
 
             if self.cam_id is not None:
                 camidstr = self.cam_id[-11:]
@@ -183,14 +134,7 @@ class Camera(Configurable):
                     filename = '%s_%04i.np' % (triggertime_string.replace(":","+"),self.index.value)
                     photo_object['filename'] = filename
                     self.message_queue.put("Saved Photo: %s" % filename)
-
-                    if self.debug: print('starting save at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H+%M+%S.%f")))
-
                     self.try_save(photo_object,filename,camidstr)
-
-                    if self.debug: print('finished save at %s' % (datetime.datetime.now().strftime("%Y%m%d_%H+%M+%S.%f")))                    
-                    if self.info: print("Saved photo as %s" % filename)
-
                 else:
                     filename = 'photo_object_%s_%s.np' % (camidstr,datetime.datetime.now().strftime("%Y%m%d_%H+%M+%S.%f"))                   
                     self.message_queue.put("FAILED TO FIND ASSOCIATED RECORD! SAVED AS %s")
@@ -200,13 +144,21 @@ class Camera(Configurable):
 
                     self.message_queue.put("Saved Photo: %s" % filename)                  
 
-                #np.save(open('photo_%04i.np' % self.index.value,'wb'),photo.astype(np.ubyte))   
-            print("Incrementing camera index, from %d" % self.index.value)             
             self.index.value = self.index.value + 1
 
     def try_save(self, photo_object, filename, camid):
-
-        [session_name, set_name] = self.label.value.decode('utf-8').split(',') 
+        try:
+            labelstring = self.label.value.decode('utf-8')
+            [session_name, set_name] = labelstring.split(',') 
+        except ValueError:
+            #probably no comma included in string...
+            session_name = 'unnamed_session'
+            if len(labelstring)>0:
+                set_name = labelstring
+            else:
+                set_name = 'unnamed_set'
+        print(session_name, set_name)
+        
         parents = "/home/pi/beephotos/%s/%s/%s/%s/%s/" % (datetime.date.today(),session_name,set_name,self.devid.value,camid)
         path = parents + filename
 

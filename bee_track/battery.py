@@ -24,20 +24,21 @@ def scale(v):
     return p
     
 def read_batteries():
-    scaleval = 0.0164
-    # Open SPI bus
-    spi = spidev.SpiDev()
-    spi.open(0,0)
-    spi.max_speed_hz=1000000
+    return "Monitoring Disabled" #this isn't available
+    #scaleval = 0.0164
+    ## Open SPI bus
+    #spi = spidev.SpiDev()
+    #spi.open(0,0)
+    #spi.max_speed_hz=1000000
      
-    # Function to read SPI data from MCP3008 chip
-    # Channel must be an integer 0-7
+    ## Function to read SPI data from MCP3008 chip
+    ## Channel must be an integer 0-7
 
-    chB = ReadChannel(spi,6)
-    chA = ReadChannel(spi,7)
-    #return ch6, ch7, ch6*0.016, ch7*0.016
-    if (scale(chA*scaleval)<0) or (scale(chB*scaleval)<0):
-        alert = 'low! '
-    else:
-        alert = ''
-    return "%sA:%0.2f (%d%%), B:%0.2f (%d%%)" % (alert,chA*scaleval,scale(chA*scaleval), chB*scaleval, scale(chB*scaleval)) #0.016*1.027322861
+    #chB = ReadChannel(spi,6)
+    #chA = ReadChannel(spi,7)
+    ##return ch6, ch7, ch6*0.016, ch7*0.016
+    #if (scale(chA*scaleval)<0) or (scale(chB*scaleval)<0):
+    #    alert = 'low! '
+    #else:
+    #    alert = ''
+    #return "%sA:%0.2f (%d%%), B:%0.2f (%d%%)" % (alert,chA*scaleval,scale(chA*scaleval), chB*scaleval, scale(chB*scaleval)) #0.016*1.027322861
