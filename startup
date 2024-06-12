@@ -1,4 +1,6 @@
 sleep 10
+sudo ldconfig
+sleep 10
 export GI_TYPELIB_PATH=$GI_TYPELIB_PATH:/home/pi/aravis/build/src
 export LD_LIBRARY_PATH=/home/pi/aravis/build/src
 cd /home/pi/bee_track/webinterface
