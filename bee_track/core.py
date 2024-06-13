@@ -2,6 +2,7 @@ from flask import Flask, make_response, jsonify
 from bee_track.trigger import Trigger
 from bee_track.rotate import Rotate
 from bee_track.camera_aravis import Aravis_Camera as Camera
+from bee_track.camera_dummy import Dummy_Camera
 from bee_track.camera_aravis import getcameraids
 from bee_track.tracking import Tracking
 from multiprocessing import Process, Queue
@@ -204,7 +205,13 @@ def startup():
         import time
         time.sleep(1)
     if len(cameras)==0:
-        return "Failed: No cameras found"
+        print("No Cameras Found: Adding dummy camera")
+        camera = Dummy_Camera(message_queue,trigger.record,cam_trigger,cam_id=0)
+        cameras.append(camera)
+        t = Process(target=camera.worker)
+        t.start()
+        import time
+        time.sleep(1)
         
     #we'll make the tracking camera the first greyscale one if there is one, otherwise the 0th one.
     usecam=cameras[0]
