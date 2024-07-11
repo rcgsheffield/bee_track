@@ -175,11 +175,6 @@ def setid(id):
     print("Updated")
     return "Done"
 
-@app.route('/getid')
-def getid():
-    devid = open('device_id.txt','r').read()
-    return devid
-
 
 @app.route('/getid')
 def getid():
