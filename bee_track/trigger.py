@@ -18,8 +18,8 @@ class Trigger(Configurable):
         self.record = self.manager.list()
         self.direction = 0
 
-        self.flash_select_pins = [14,15,18,23,5,22] #[8,10,12,16] #Board->BCM pins
-        self.power_to_flash_pins = [27,17] #[top,bottom] only 2 available
+        self.flash_select_pins = [14,15,18,23,27,17] #[8,10,12,16] #Board->BCM pins
+        self.power_to_flash_pins = [5,22] #[top,bottom] only 2 available
 
         self.trigger_pin = 24 #18 #Board->BCM pins
         times_fired = []
@@ -88,6 +88,22 @@ class Trigger(Configurable):
                 self.times_fired[self.seqn] += 1
                 self.total_flashes.value += 1
                 self.seqn+=1
+                if self.seqn>=len(self.flashselection):
+                    self.seqn = 0
+            if self.flashseq.value == 4:
+                #4 flashes at a time
+                GPIO.output(self.flash_select_pins[self.flashselection[self.seqn]],True)
+                GPIO.output(self.flash_select_pins[self.flashselection[self.seqn+1]],True)
+                self.times_fired[self.seqn] += 1
+                self.times_fired[self.seqn+1] += 1
+                next_flash = self.seqn + 2
+                if next_flash>=len(self.flashselection):
+                    next_flash = 0
+                GPIO.output(self.flash_select_pins[self.flashselection[next_flash]],True)
+                GPIO.output(self.flash_select_pins[self.flashselection[next_flash+1]],True)
+                self.times_fired[next_flash] += 1
+                self.times_fired[next_flash+1] += 1
+                self.seqn+=2
                 if self.seqn>=len(self.flashselection):
                     self.seqn = 0
             if self.flashseq.value==9:
