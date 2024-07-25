@@ -14,26 +14,15 @@ class Trigger(Configurable):
         self.flashselection = self.manager.list()
         self.flash_power_sel = self.manager.list()
 
-        self.flash_power_sel = self.manager.list()
-
         self.index = multiprocessing.Value('i',0)
         self.record = self.manager.list()
         self.direction = 0
+        self.flash_select_pins = [14,15,18,23] #[8,10,12,16] #Board->BCM pins
 
         self.flash_select_pins = [14,15,18,23,27,17] #[8,10,12,16] #Board->BCM pins
-        self.power_to_flash_pins = [5,22] #[top,bottom] only 2 available
+        self.power_to_flash_pins = [27,17] #[top,bottom] only 2 available
 
         self.trigger_pin = 24 #18 #Board->BCM pins
-        times_fired = []
-        for i in range(len(self.flash_select_pins)):
-            self.flashselection.append(i)
-            times_fired.append(0)
-
-        self.times_fired = self.manager.Array('i',times_fired)
-
-        self.flash_power_sel.append(0) # top
-        self.flash_power_sel.append(1) # bottom
-
         times_fired = []
         for i in range(len(self.flash_select_pins)):
             self.flashselection.append(i)
@@ -50,19 +39,13 @@ class Trigger(Configurable):
         self.skipnoflashes = multiprocessing.Value('i',0) #how many to skip
         self.max_flashes = multiprocessing.Value('i',40)
         self.total_flashes = multiprocessing.Value('i',0)
-        self.max_flashes = multiprocessing.Value('i',40)
-        self.total_flashes = multiprocessing.Value('i',0)
         self.preptime = 0.02
         self.triggertime = 0.03 #this will end up at least 200us
         self.seqn = 0
         GPIO.setmode(GPIO.BCM) #GPIO.BOARD) #Board->BCM
         GPIO.setup(self.trigger_pin, GPIO.OUT)
 
-
         for pin in self.flash_select_pins:
-            GPIO.setup(pin, GPIO.OUT)
-
-        for pin in self.power_to_flash_pins:
             GPIO.setup(pin, GPIO.OUT)
 
         for pin in self.power_to_flash_pins:
@@ -70,8 +53,6 @@ class Trigger(Configurable):
         time.sleep(0.5)
         for pin in self.flash_select_pins:
             GPIO.output(pin, False)
-        for pin in self.power_to_flash_pins:
-            GPIO.output(pin, True)
         for pin in self.power_to_flash_pins:
             GPIO.output(pin, True)
         GPIO.output(self.trigger_pin, False)
@@ -84,25 +65,19 @@ class Trigger(Configurable):
             fireflash = boolean: true=fire flash
             endofset = boolean: whether this is the last photo of a set (this will then tell the tracking system to look for the bee).
         """
-        self.power_control()
-        self.power_control()
         if self.debug:
             print("Photo:    Flash" if fireflash else "Photo: No Flash")
-        
+        if self.seqn>=len(self.flashselection):
+                    self.seqn = 0
         if fireflash:
             if self.flashseq.value==0:
                 for flash in self.flashselection:
                     GPIO.output(self.flash_select_pins[flash],True)
                     self.times_fired[flash] += 1
                     self.total_flashes.value += 1
-                    self.times_fired[flash] += 1
-                    self.total_flashes.value += 1
             if self.flashseq.value==1:
                 GPIO.output(self.flash_select_pins[self.flashselection[self.seqn]],True)
                 GPIO.output(self.flash_select_pins[self.flashselection[self.seqn+1]],True)
-                self.times_fired[self.seqn] += 1
-                self.times_fired[self.seqn+1] += 1
-                self.total_flashes.value += 1
                 self.times_fired[self.seqn] += 1
                 self.times_fired[self.seqn+1] += 1
                 self.total_flashes.value += 1
@@ -113,27 +88,29 @@ class Trigger(Configurable):
                 GPIO.output(self.flash_select_pins[self.flashselection[self.seqn]],True)
                 self.times_fired[self.seqn] += 1
                 self.total_flashes.value += 1
-                self.times_fired[self.seqn] += 1
-                self.total_flashes.value += 1
                 self.seqn+=1
                 if self.seqn>=len(self.flashselection):
                     self.seqn = 0
-            if self.flashseq.value == 4:
-                #4 flashes at a time
+
+            if self.flashseq.value==4:
                 GPIO.output(self.flash_select_pins[self.flashselection[self.seqn]],True)
                 GPIO.output(self.flash_select_pins[self.flashselection[self.seqn+1]],True)
                 self.times_fired[self.seqn] += 1
                 self.times_fired[self.seqn+1] += 1
-                next_flash = self.seqn + 2
-                if next_flash>=len(self.flashselection):
-                    next_flash = 0
-                GPIO.output(self.flash_select_pins[self.flashselection[next_flash]],True)
-                GPIO.output(self.flash_select_pins[self.flashselection[next_flash+1]],True)
-                self.times_fired[next_flash] += 1
-                self.times_fired[next_flash+1] += 1
                 self.seqn+=2
                 if self.seqn>=len(self.flashselection):
                     self.seqn = 0
+
+                GPIO.output(self.flash_select_pins[self.flashselection[self.seqn]],True)
+                GPIO.output(self.flash_select_pins[self.flashselection[self.seqn+1]],True)
+                self.times_fired[self.seqn] += 1
+                self.times_fired[self.seqn+1] += 1
+                self.seqn+=2
+                if self.seqn>=len(self.flashselection):
+                    self.seqn = 0
+
+                self.total_flashes.value += 1
+
             if self.flashseq.value==9:
                 for pin in self.flash_select_pins:
                     GPIO.output(pin, False)
@@ -144,7 +121,6 @@ class Trigger(Configurable):
         triggertime = time.time() #TODO Why are these two different?
         triggertimestring = datetime.datetime.now() #need to convert to string later
         
-
         
         
         triggertimestring = triggertimestring.strftime("%Y%m%d_%H:%M:%S.%f")
@@ -152,79 +128,18 @@ class Trigger(Configurable):
             'flashselection':list(self.flashselection),'triggertime':triggertime,'triggertimestring':triggertimestring})
         print("Incrementing trigger index from %d" % self.index.value) 
         self.index.value = self.index.value + 1
-
         #Software trigger...
         #self.cam_trigger.set()
         
         
         #Trigger via pin...
         GPIO.output(self.trigger_pin,True)
-
         time.sleep(self.triggertime)
         for pin in self.flash_select_pins:
             GPIO.output(pin, False)
             
         #(trigger via pin)...
         GPIO.output(self.trigger_pin,False)
-
-
-    def power_control(self):
-        #Top 2 are controlled together, bottom 4 are controlled together
-        #After flash 2 has fired 65 times, turn off top 2 for 2 flashes
-        #After flast 6 has fired 70 times, turn off top 2 for 2 flashes
-
-        if self.times_fired[1] == 25:
-            self.total_flashes.value = 0
-            GPIO.output(self.power_to_flash_pins[0], False)
-            print("TURNED OFF TOP")
-
-        elif self.times_fired[1] >= 25 and self.total_flashes.value >= 3:
-            GPIO.output(self.power_to_flash_pins[0], True)
-            print("TURNED ON TOP")
-
-        if self.times_fired[5] == 30:
-            self.total_flashes.value = 0
-            GPIO.output(self.power_to_flash_pins[1], False)
-            print("TURNED OFF BOTTOM")
-
-        elif self.times_fired[5] >= 30 and self.total_flashes.value >= 3:
-            GPIO.output(self.power_to_flash_pins[1], True)
-            print("TURNED ON BOTTOM")
-
-        print(self.times_fired)
-
-        for count in range(len(self.times_fired)):
-            if self.times_fired[count] > self.max_flashes.value:
-                self.times_fired[count] = 0
-
-    def power_control(self):
-        #Top 2 are controlled together, bottom 4 are controlled together
-        #After flash 2 has fired 65 times, turn off top 2 for 2 flashes
-        #After flast 6 has fired 70 times, turn off top 2 for 2 flashes
-
-        if self.times_fired[1] == 25:
-            self.total_flashes.value = 0
-            GPIO.output(self.power_to_flash_pins[0], False)
-            print("TURNED OFF TOP")
-
-        elif self.times_fired[1] >= 25 and self.total_flashes.value >= 3:
-            GPIO.output(self.power_to_flash_pins[0], True)
-            print("TURNED ON TOP")
-
-        if self.times_fired[5] == 30:
-            self.total_flashes.value = 0
-            GPIO.output(self.power_to_flash_pins[1], False)
-            print("TURNED OFF BOTTOM")
-
-        elif self.times_fired[5] >= 30 and self.total_flashes.value >= 3:
-            GPIO.output(self.power_to_flash_pins[1], True)
-            print("TURNED ON BOTTOM")
-
-        print(self.times_fired)
-
-        for count in range(len(self.times_fired)):
-            if self.times_fired[count] > self.max_flashes.value:
-                self.times_fired[count] = 0
 
 
     def worker(self):
@@ -239,7 +154,6 @@ class Trigger(Configurable):
             if not skipnoflashphoto:
                 self.trigger_camera(False,True)
                 skipcount = 0
-
                 time.sleep(self.t.value-self.triggertime*2-self.preptime*2-delaystart)
             else:
                 time.sleep(self.t.value-self.triggertime-self.preptime-delaystart)
