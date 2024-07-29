@@ -24,7 +24,7 @@ class Rotate(Configurable):
         self.motorcontrol = RpiMotorLib.A4988Nema(self.direction, self.step, (1,1,1), "DRV8825")
         print("Setting pin En_pin as output")
         sleep(0.1)
-        GPIO.setup(self.EN_pin,GPIO.OUT) # set enable pin as output
+        #GPIO.setup(self.EN_pin,GPIO.OUT) # set enable pin as output
 
 
     def worker(self):   

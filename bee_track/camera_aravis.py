@@ -52,7 +52,7 @@ class Aravis_Camera(Camera):
         print(self.aravis_camera.gv_get_packet_delay())
         #self.aravis_camera.gv_set_stream_options(Aravis.GvStreamOption.NONE)
         
-        aravis_device = self.aravis_camera.get_device();
+        aravis_device = self.aravis_camera.get_device()
         ####print(aravis_device.get_string_feature_value('MaxImageSize'))
         
         availpixelformats = self.aravis_camera.dup_available_pixel_formats_as_strings()
@@ -98,8 +98,8 @@ class Aravis_Camera(Camera):
         ##self.aravis_camera.set_trigger("Line0")
         ####### #self.aravis_camera.set_trigger_source("Line0")
 
-        aravis_device.set_string_feature_value("TriggerActivation", "RisingEdge");
-        aravis_device.set_string_feature_value("AcquisitionMode", "Continuous");
+        aravis_device.set_string_feature_value("TriggerActivation", "RisingEdge")
+        aravis_device.set_string_feature_value("AcquisitionMode", "Continuous")
 
         #Triggering the flash...
         #if triggerflash: #this camera might not be the one doing the triggering
@@ -140,12 +140,12 @@ class Aravis_Camera(Camera):
         
         ###
         
-        #self.stream.set_property('packet-timeout',5000)
-        #self.stream.set_property('frame-retention',250000)
-        #self.stream.set_property('packet-request-ratio',0.1)        
-        #self.stream.set_property('socket-buffer',Aravis.GvStreamSocketBuffer.FIXED)
-        #self.stream.set_property('socket-buffer-size',5000000)
-        #self.stream.set_property('packet-resend',Aravis.GvStreamPacketResend.ALWAYS)
+        # self.stream.set_property('packet-timeout',5000)
+        # self.stream.set_property('frame-retention',250000)
+        # self.stream.set_property('packet-request-ratio',0.1)        
+        # self.stream.set_property('socket-buffer',Aravis.GvStreamSocketBuffer.FIXED)
+        # self.stream.set_property('socket-buffer-size',5000000)
+        # self.stream.set_property('packet-resend',Aravis.GvStreamPacketResend.NEVER)
         
         ###
         
@@ -154,6 +154,7 @@ class Aravis_Camera(Camera):
             print("Failed to construct stream")
             return
         self.aravis_camera.start_acquisition()
+
         for i in range(0,16):
             self.stream.push_buffer(Aravis.Buffer.new_allocate(self.payload))
             

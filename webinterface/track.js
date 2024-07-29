@@ -74,20 +74,6 @@ $('button#imagedownx10').click(function () {
     image = image - 10;
 })
 url_ID = "http://" + $('input#url').val() + "/getid";
-console.debug("Sanity Check")
-$("body").onload(function (){
-    $.ajax({
-            url: url_ID,
-            success: function (data, status, jqXHR) {
-                $('#box_id_show').html(data);
-                console.debug(data)
-            },
-            error: function (jqXHR, status, errorThrown) {
-                msg("cant get id");
-            }
-    });
-})
-
 setInterval(function () {
     url = "http://" + $('input#url').val() + "/getdiskfree";
     $.ajax({
