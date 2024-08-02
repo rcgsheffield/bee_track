@@ -54,6 +54,30 @@ This must be done after running aravissetup because some of the python modules r
 
 To set the device id file, make a new file called 'device_id.txt' in the `~/bee_track/webinterface` folder, with a single number in, on one line (e.g. 1015).
 
+**Running Beetrack on Boot automatically**: To run the project on a headless pi with no interaction you must complete the following steps. Bear in mind it takes a good 3-5 miniutes to get up and running every boot.
+
+Edit rc.local by
+`sudo nano /etc/rc.local`
+Add the following line:
+
+`su - pi -c /home/pi/bee_track/startup &`
+
+Before exit 0
+
+Add the following to `/etc/network/interfaces`
+
+```
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet static
+address 169.254.160.220
+```
+
+Reboot and the project should run without any interaction
+
+
 # Running Beetrack from command line
 
 Make sure you are in virtual environment where all the installs have occured
@@ -85,30 +109,6 @@ You will probably want to reinstall with git an editable version
 (bee-venv)$ cd ~/bee_track
 (bee-venv)$ pip install -e .
 ```
-
-# Running Beetrack on Boot automatically
-To run the project on a headless pi with no interaction you must complete the following steps. Bear in mind it takes a good 3-5 miniutes to get up and running every boot.
-
-Edit rc.local by
-`sudo nano /etc/rc.local`
-Add the following line:
-
-`su - pi -c /home/pi/bee_track/startup &`
-
-Before exit 0
-
-Add the following to `/etc/network/interfaces`
-
-```
-auto lo
-iface lo inet loopback
-
-auto eth0
-iface eth0 inet static
-address 169.254.160.220
-```
-
-Reboot and the project should run without any interaction
 
 # Manual Setup
 
