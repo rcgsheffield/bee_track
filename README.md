@@ -52,6 +52,8 @@ THEN install python dependencies in the venv (make sure it `(bee-venv)` is on th
 
 This must be done after running aravissetup because some of the python modules rely on some of the installs when installing aravis.
 
+To set the device id file, make a new file called 'device_id.txt' in the `~/bee_track/webinterface` folder, with a single number in, on one line (e.g. 1015).
+
 # Running Beetrack from command line
 
 Make sure you are in virtual environment where all the installs have occured
