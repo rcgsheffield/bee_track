@@ -1,2 +1,3 @@
 sleep 30
-autossh -f -R 5003:localhost:22 ohio@iot.bugtrack.org.uk -i/home/pi/.ssh/ohio2.pem -N
+autossh -f -R 5003:localhost:22 ohio@iot.bugtrack.org.uk -i/home/pi/.ssh/ohio2.pem -N -o StrictHostKeyChecking=no
+
