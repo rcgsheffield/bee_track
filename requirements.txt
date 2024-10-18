@@ -15,7 +15,7 @@ retrodetect
 QueueBuffer @ git+https://github.com/lionfish0/QueueBuffer.git
 
 psutil==5.*
-Flask-Cors==4.*
+Flask-Cors==5.*
 Flask-Compress==1.*
 spidev==3.*
 requests==2.*
