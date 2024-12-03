@@ -159,6 +159,11 @@ class Camera(Configurable):
                 set_name = 'unnamed_set'
         print(session_name, set_name)
         
+        photo_object['session_name'] = session_name
+        photo_object['set_name'] = set_name
+        photo_object['dev_id'] = self.devid.value
+        photo_object['camid'] = camid
+        
         parents = "/home/pi/beephotos/%s/%s/%s/%s/%s/" % (datetime.date.today(),session_name,set_name,self.devid.value,camid)
         path = parents + filename
 
