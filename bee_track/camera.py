@@ -118,53 +118,53 @@ class Camera(Configurable):
             
             last_photo_object = photo_object
 
-
-            self.photo_queue.put(photo_object)
+            try:
+                labelstring = self.label.value.decode('utf-8')
+                [session_name, set_name] = labelstring.split(',') 
+            except ValueError:
+                #probably no comma included in string...
+                session_name = 'unnamed_session'
+                if len(labelstring)>0:
+                    set_name = labelstring
+                else:
+                    set_name = 'unnamed_set'
 
             if self.cam_id is not None:
                 camidstr = self.cam_id[-11:]
 
             else:
                 camidstr = ''
+                            
+            photo_object['session_name'] = session_name
+            photo_object['set_name'] = set_name
+            photo_object['dev_id'] = self.devid.value
+            photo_object['camid'] = camidstr
+            
+
+                
+            if rec is not None:
+                triggertime_string = photo_object['record']['triggertimestring']
+
+                filename = '%s_%04i.np' % (triggertime_string.replace(":","+"),self.index.value)
+                photo_object['filename'] = filename
+            else:
+                filename = 'photo_object_%s_%s.np' % (camidstr,datetime.datetime.now().strftime("%Y%m%d_%H+%M+%S.%f"))                   
+                self.message_queue.put("FAILED TO FIND ASSOCIATED RECORD! SAVED AS %s")
+                photo_object['filename'] = filename
+                
+            
+            self.photo_queue.put(photo_object)
 
             if self.savephotos.value:
-                if rec is not None:
-                    triggertime_string = photo_object['record']['triggertimestring']
-
-                    filename = '%s_%04i.np' % (triggertime_string.replace(":","+"),self.index.value)
-                    photo_object['filename'] = filename
-                    self.message_queue.put("Saved Photo: %s" % filename)
-                    self.try_save(photo_object,filename,camidstr)
-                else:
-                    filename = 'photo_object_%s_%s.np' % (camidstr,datetime.datetime.now().strftime("%Y%m%d_%H+%M+%S.%f"))                   
-                    self.message_queue.put("FAILED TO FIND ASSOCIATED RECORD! SAVED AS %s")
-                    photo_object['filename'] = filename
-
-                    self.try_save(photo_object,filename,camidstr)
-
-                    self.message_queue.put("Saved Photo: %s" % filename)                  
+                self.try_save(photo_object,filename,camidstr)
+                self.message_queue.put("Saved Photo: %s" % filename)
+                
+                
 
             self.index.value = self.index.value + 1
 
     def try_save(self, photo_object, filename, camid):
-        try:
-            labelstring = self.label.value.decode('utf-8')
-            [session_name, set_name] = labelstring.split(',') 
-        except ValueError:
-            #probably no comma included in string...
-            session_name = 'unnamed_session'
-            if len(labelstring)>0:
-                set_name = labelstring
-            else:
-                set_name = 'unnamed_set'
-        print(session_name, set_name)
-        
-        photo_object['session_name'] = session_name
-        photo_object['set_name'] = set_name
-        photo_object['dev_id'] = self.devid.value
-        photo_object['camid'] = camid
-        
-        parents = "/home/pi/beephotos/%s/%s/%s/%s/%s/" % (datetime.date.today(),session_name,set_name,self.devid.value,camid)
+        parents = "/home/pi/beephotos/%s/%s/%s/%s/%s/" % (datetime.date.today(),photo_object['session_name'],photo_object['set_name'],photo_object['dev_id'],photo_object['camid'])
         path = parents + filename
 
         try:

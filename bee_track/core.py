@@ -220,16 +220,19 @@ def startup():
         time.sleep(1)
         
     #we'll make the tracking camera the first greyscale one if there is one, otherwise the 0th one.
-    usecam=cameras[0]
+    greyscalecam = None
+    colourcam = None
+    
     print("looking for camera to use for tracking...")
     for cam in cameras:
         print("Cam...")
         print(cam.colour_camera.value)
         if cam.colour_camera.value==0:
-            print("Not colour cam")
-            usecam = cam
-            #break
-    tracking = Tracking(message_queue,cam.photo_queue)
+            greyscalecam = cam
+        else:
+            colourcam = cam
+            
+    tracking = Tracking(message_queue,greyscalecam.photo_queue,colourcam.photo_queue)
     t = Process(target=tracking.worker)
     t.start()
     
