@@ -49,6 +49,10 @@ network={
 
 `source bee-venv/bin/activate`
 
+- Ensure 'apt' up to date:
+
+`sudo apt-get update`
+
 - Clone the 'bee_track' repo:
 
 `git clone https://github.com/SheffieldMLtracking/bee_track.git`
