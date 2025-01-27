@@ -49,7 +49,7 @@ network={
 
 `source bee-venv/bin/activate`
 
-- Ensure 'apt' up to date:
+- Ensure 'apt' utility is up-to-date:
 
 `sudo apt-get update`
 
