@@ -70,6 +70,34 @@ This should install any dependencies needed for aravis, clone aravis, setup, bui
 
 This must be done after running `aravissetup` because some of the python modules rely on some of the installs when installing aravis.
 
+*Now we need to install btretrodetect and its dependencies. Hopefully we can eventually incorportate this into the prevous step but for now we'll do it manually:*
+- *Clone the retrodetect repo:*
+
+`git clone https://github.com/SheffieldMLtracking/btretrodetect.git`
+
+- *Install it*
+
+`pip install git+https://github.com/SheffieldMLtracking/btretrodetect.git`
+
+- *Then install sklearn:*
+
+`pip3 install -U scikit-learn`
+
+- *...and simplejpeg:*
+
+`pip install simplejpeg`
+
+*Before we can run btretrodetect, we need to give it an offset file so it knows how to translate between monochrom and colour camera coordinates. We will work out the true offset later, but for now we need to give it a dummy file so it doesn't crash on boot:*
+- *Create a file:*
+
+`sudo nano /home/pi/.btretrodetect/offset.json`
+
+- *Now paste the following text and save the file:*
+
+```
+{"all": [20, 10]}
+```
+
 - Set the device ID file: make a new file called 'device_id.txt' in the `~/bee_track/webinterface` folder:
 
 `sudo nano ~/bee_track/webinterface/device_id.txt`
@@ -80,17 +108,42 @@ In the new file write a single number identifying the box, on a single line line
 ### Running Beetrack on Boot automatically
 To run the project on a headless pi with no interaction you must complete the following steps. Bear in mind it takes a good 3-5 minutes to get up and running every boot.
 
-- Edit rc.local by
+It looks as though the latest version of the Raspberry Pi OS no longer uses  `etc/rc.local` and `etc/network/interfaces`, so we will reinstate them ourselves. (In the long term, we should look into a better way to do this.)
+
+- Create rc.local file:
 
 `sudo nano /etc/rc.local`
 
-- Add the following line:
+- Paste the following text into file:
+  
+```
+#!/bin/sh
+# add your commands
+# call your scripts here
+su - pi -c /home/pi/bee_track/startup &
+/home/pi/bee_track/startupssh
+# last line must be exit 0
+exit 0
+```
+*Note that this both starts beetrack on startup, and starts autossh to establish a connection to the AWS server (see section below). If you do not need the autossh connection, delete the line `/home/pi/bee_track/startupssh`*
 
-`su - pi -c /home/pi/bee_track/startup &`
+- Set permissions:
 
-Before exit 0
+`sudo chmod -v +x /etc/rc.local`
 
-- Add the following to `/etc/network/interfaces`
+- Enable rc.local:
+
+`sudo systemctl enable rc-local.service`
+
+- Download etc/network/interfaces:
+
+`sudo apt install ifupdown net-tools`
+
+- Now edit file by:
+
+`sudo nano /etc/network/interfaces`
+
+- ... add the following, then save and exit:
 
 ```
 auto lo
@@ -100,34 +153,6 @@ auto eth0
 iface eth0 inet static
 address 169.254.160.220
 ```
-
-*It looks as though the latest version of the Raspberry Pi OS no longer uses  `etc/rc.local` and `etc/network/interfaces`. We can create and enable `rc.local` ourselves, but I haven't yet figured out how to re-enable `etc/network/interfaces`. Instead, I am using `rc.local` to establish the ethernet connection for the cameras on startup:*
-
-- *Create `rc.local` file:*
-
-`sudo nano /etc/rc.local`
-
-
-- *Write in the following:*
-```
-#!/bin/sh
-# add your commands
-# call your scripts here
-ifconfig eth0 up 169.254.160.220
-su - pi -c /home/pi/bee_track/startup &
-/home/pi/bee_track/startupssh
-# last line must be exit 0
-exit 0
-```
-*Note that this does three things: it replaces `etc/network/interfaces` to configure the ethernet connection; it starts beetrack on startup; and it starts autossh to establish a connection to the AWS server (see section below). If you do not need the autossh connection, delete the line `/home/pi/bee_track/startupssh`*
-
-- *Set permissions:*
-
-`sudo chmod -v +x /etc/rc.local`
-
-- *Enable `rc.local`:*
-
-`sudo systemctl enable rc-local.service`
 
 - When you reboot (`sudo reboot`), the project should run without any interaction. You can reboot now, or continue with the following sections before rebooting.
 
@@ -353,3 +378,56 @@ docker run -it -v $image_path:/sdcard/filesystem.img lukechilds/dockerpi:vm p3
 ```
 
 TODO this doesn't work
+
+
+## Old instructions for setting up bee-track to run on boot. Saved for now but currently superceded by section above.
+- Edit rc.local by
+
+`sudo nano /etc/rc.local`
+
+- Add the following line:
+
+`su - pi -c /home/pi/bee_track/startup &`
+
+Before exit 0
+
+- Add the following to `/etc/network/interfaces`
+
+```
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet static
+address 169.254.160.220
+```
+
+* We can create and enable `rc.local` ourselves, but I haven't yet figured out how to re-enable `etc/network/interfaces`. Instead, I am using `rc.local` to establish the ethernet connection for the cameras on startup:*
+
+- *Create `rc.local` file:*
+
+`sudo nano /etc/rc.local`
+
+
+- *Write in the following:*
+```
+#!/bin/sh
+# add your commands
+# call your scripts here
+ifconfig eth0 up 169.254.160.220
+su - pi -c /home/pi/bee_track/startup &
+/home/pi/bee_track/startupssh
+# last line must be exit 0
+exit 0
+```
+*Note that this does three things: it replaces `etc/network/interfaces` to configure the ethernet connection; it starts beetrack on startup; and it starts autossh to establish a connection to the AWS server (see section below). If you do not need the autossh connection, delete the line `/home/pi/bee_track/startupssh`*
+
+- *Set permissions:*
+
+`sudo chmod -v +x /etc/rc.local`
+
+- *Enable `rc.local`:*
+
+`sudo systemctl enable rc-local.service`
+
+- When you reboot (`sudo reboot`), the project should run without any interaction. You can reboot now, or continue with the following sections before rebooting.
