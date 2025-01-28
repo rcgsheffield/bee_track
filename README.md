@@ -176,21 +176,19 @@ Edit startupssh by
 
 `sudo nano /home/pi/bee_track/startupssh`
 
-- The file should already contain the following lines:
+- Edit the file to read:
 ```
 sleep 30
 autossh -f -R 5003:localhost:22 ohio@iot.bugtrack.org.uk -i/home/pi/.ssh/KEYFILE.pem -N -o StrictHostKeyChecking=no
+autossh -f -R 8003:localhost:8000 ohio@iot.bugtrack.org.uk -i/home/pi/.ssh/KEYFILE.pem -N -o StrictHostKeyChecking=no
+autossh -f -R 6003:localhost:5000 ohio@iot.bugtrack.org.uk -i/home/pi/.ssh/KEYFILE.pem -N -o StrictHostKeyChecking=no
 ```
 
-If not, add them.
+Replace 'KEYFILE.pem' with the name of the keyfile we use to ssh to the AWS server.
 
-- Then add:
-```
-autossh -N -f -R 8003:localhost:8000 ohio@iot.bugtrack.org.uk -i/home/pi/.ssh/KEYFILE.pem -o StrictHostKeyChecking=no
-autossh -N -f -R 6003:localhost:5000 ohio@iot.bugtrack.org.uk -i/home/pi/.ssh/KEYFILE.pem -o StrictHostKeyChecking=no
-```
+Replace `5003`, `8003` and `6003` with port numbers that are unique to your box, so that we can establish connections to multiple boxes.
 
-*Make sure you replace `5003`, `8003` and `6003` with port numbers that are unique to your box, so that we can establish connections to multiple boxes. I have been using the following pattern:*
+*I have been using the following pattern:*
 
 *Each box is identified by a four digit number, e.g. `1035`. For port 22, add 4000, to get e.g. `5035`. For port 8000, add 7000, to get e.g. `8035`. For port 5000, add 5000, to get e.g. `6035`*
 
