@@ -184,13 +184,11 @@ autossh -f -R 8003:localhost:8000 ohio@iot.bugtrack.org.uk -i/home/pi/.ssh/KEYFI
 autossh -f -R 6003:localhost:5000 ohio@iot.bugtrack.org.uk -i/home/pi/.ssh/KEYFILE.pem -N -o StrictHostKeyChecking=no
 ```
 
-Replace 'KEYFILE.pem' with the name of the keyfile we use to ssh to the AWS server.
+Replace `KEYFILE.pem` with the name of the keyfile we use to ssh to the AWS server.
 
 Replace `5003`, `8003` and `6003` with port numbers that are unique to your box, so that we can establish connections to multiple boxes.
 
-*I have been using the following pattern:*
-
-*Each box is identified by a four digit number, e.g. `1035`. For port 22, add 4000, to get e.g. `5035`. For port 8000, add 7000, to get e.g. `8035`. For port 5000, add 5000, to get e.g. `6035`*
+*I have been using the following pattern: each box is identified by a four digit number, e.g. `1035`. For port 22, add 4000, to get e.g. `5035`. For port 8000, add 7000, to get e.g. `8035`. For port 5000, add 5000, to get e.g. `6035`*
 
 - Set permissions:
 
