@@ -1,0 +1,24 @@
+numpy
+scipy
+flask
+RPi.GPIO
+ninja
+PyGObject
+rpimotorlib
+rpi-lgpio
+libsvm
+mem_top
+sklearn
+simplejpeg
+
+-e bee_track @ git+https://github.com/SheffieldMLtracking/bee_track.git 
+
+-e btretrodetect @ git+https://github.com/SheffieldMLtracking/btretrodetect.git
+
+QueueBuffer @ git+https://github.com/lionfish0/QueueBuffer.git
+
+psutil==5.*
+Flask-Cors==4.*
+Flask-Compress==1.*
+spidev==3.*
+requests==2.*
