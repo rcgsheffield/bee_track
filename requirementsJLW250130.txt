@@ -8,7 +8,7 @@ rpimotorlib
 rpi-lgpio
 libsvm
 mem_top
-sklearn
+scikit-learn
 simplejpeg
 
 -e bee_track @ git+https://github.com/SheffieldMLtracking/bee_track.git 
