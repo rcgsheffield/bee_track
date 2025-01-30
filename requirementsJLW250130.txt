@@ -13,7 +13,7 @@ simplejpeg
 
 -e bee_track @ git+https://github.com/SheffieldMLtracking/bee_track.git 
 
--e btretrodetect @ git+https://github.com/SheffieldMLtracking/btretrodetect.git
+git+https://github.com/SheffieldMLtracking/btretrodetect.git
 
 QueueBuffer @ git+https://github.com/lionfish0/QueueBuffer.git
 
